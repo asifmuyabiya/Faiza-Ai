@@ -166,26 +166,35 @@ object EchoText {
         return heard.isNotEmpty() && letters >= 3 && echoShare(heard, recentOutput) < 0.5
     }
 
-    /** Bangla stop stems, matched inside a word ("থামো", "থামেন", "থামুন", "চুপ কর", "দাঁড়াও", "স্টপ", "ওয়েট"…). */
-    private val STOP_STEMS = listOf("থাম", "চুপ", "দাঁড়া", "দাড়া", "স্টপ", "ওয়েট", "ওয়েট", "ওয়েইট")
-        .map { nfc(it) }
-
-    /** Whole words in English / Banglish. */
-    private val STOP_WORDS = setOf("stop", "wait", "enough", "shut", "thamo", "thamen", "thamun", "tham", "chup", "ruko")
-
     private fun nfc(s: String) = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFC)
 
-    private fun isStopWord(word: String): Boolean {
-        val w = nfc(word)
-        return w in STOP_WORDS || STOP_STEMS.any { w.contains(it) }
-    }
+    /**
+     * Exact stop words only (no "contains"): her own echo, mis-heard by the speech recogniser, used to turn
+     * ordinary words like "থামবে" / "চুপচাপ" / "দাঁড়ায়" into a stop and she silenced herself.
+     */
+    private val STOP_WORDS = listOf(
+        "থামো", "থামেন", "থামুন", "থাম", "থামাও", "থামান", "চুপ", "দাঁড়াও", "দাড়াও", "দাঁড়ান", "দাড়ান",
+        "স্টপ", "ওয়েট", "ওয়েইট",
+        "stop", "wait", "enough", "thamo", "thamen", "thamun", "tham", "chup"
+    ).mapTo(HashSet()) { nfc(it) }
+
+    /** Only the last few words: the user's "থামো" is fresh, old echo in the transcript must not add up. */
+    private const val STOP_WINDOW = 8
+
+    private fun isStopWord(word: String): Boolean = nfc(word) in STOP_WORDS
 
     /**
-     * Owner: "থামো থামো, এটা না" — a stop word in the mic transcript that Faiza did not just say herself.
-     * Her own recent words are excluded, so reading out a text that contains "থামো" can't stop her.
+     * Owner: "থামো থামো, এটা না" — a stop word in the mic transcript that Faiza did not just say herself, AND
+     * either said twice ("থামো থামো") or said in the user's own words (not buried inside her echoed sentence).
+     * Her own recent words never count, so reading out a text that contains "থামো" can't stop her.
      */
     fun isStopCommand(heard: List<String>, recentOutput: Set<String>): Boolean {
         val her = recentOutput.mapTo(HashSet()) { nfc(it) }
-        return heard.any { isStopWord(it) && nfc(it) !in her }
+        val tail = heard.takeLast(STOP_WINDOW)
+        val stops = tail.count { isStopWord(it) && nfc(it) !in her }
+        if (stops >= 2) return true
+        if (stops == 0) return false
+        // One stop word: only if the words around it are mostly NOT hers (the user talking, not her echo).
+        return echoShare(tail.map { nfc(it) }, her) < 0.5
     }
 }

@@ -27,8 +27,16 @@ class StopCommandTest {
         assertTrue(stop("thamo"))
     }
 
-    @Test fun stopWordMixedWithHerEchoStillCounts() {
-        assertTrue(stop("বিকালে একটু বৃষ্টি থামো"))
+    @Test fun repeatedStopOverHerEchoStillCounts() {
+        assertTrue(stop("বিকালে একটু বৃষ্টি থামো থামো"))
+    }
+
+    @Test fun misheardEchoDoesNotStopHer() {
+        // Her echo, recognised a little wrong, with one stop-like word inside her own sentence.
+        assertFalse(stop("বিকালে একটু বৃষ্টি থামবে"))
+        assertFalse(stop("আজ ঢাকায় আবহাওয়া চুপচাপ থাকবে"))
+        assertFalse(stop("রোদ ঝলমলে থাকবে বিকালে থাম"))
+        assertFalse(stop("সে রাস্তায় দাঁড়ায়"))
     }
 
     @Test fun herOwnEchoNeverStopsHer() {
