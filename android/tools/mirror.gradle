@@ -1,0 +1,6 @@
+def mirror = { r -> r.maven { url 'https://maven-central.storage-download.googleapis.com/maven2/' } }
+beforeSettings { s -> s.pluginManagement.repositories { mirror(delegate) } }
+allprojects {
+  buildscript.repositories { mirror(delegate) }
+  repositories { mirror(delegate) }
+}

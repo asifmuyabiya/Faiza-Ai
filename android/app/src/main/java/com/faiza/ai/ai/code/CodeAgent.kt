@@ -51,6 +51,28 @@ object CodeAgent {
     val currentSlug = MutableStateFlow<String?>(null)
     val running get() = job?.isActive == true
 
+    /** Code as it is written, for the live 💻 window: [FILE_MARK]+path starts a file, other items are its text. */
+    val typing = kotlinx.coroutines.flow.MutableSharedFlow<String>(extraBufferCapacity = 256)
+    const val FILE_MARK = "\u0000FILE:"
+
+    /** Shows each written file in the live window (pieces of ~2 KB so the window types it out smoothly). */
+    private fun showWritten(edits: CodeParsers.Edits) {
+        edits.files.forEach { (path, content) ->
+            typing.tryEmit(FILE_MARK + path)
+            content.chunked(2_000).forEach { typing.tryEmit(it) }
+            if (!content.endsWith("\n")) typing.tryEmit("\n")
+        }
+        edits.deletes.forEach { typing.tryEmit(FILE_MARK + "🗑 $it") }
+    }
+
+    /** Opens the floating 💻 window over whatever app is on screen (needs "Display over other apps"). */
+    private fun openLiveWindow(ctx: Context) {
+        if (!prefs.codeLiveWindow) return
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            runCatching { com.faiza.ai.ui.windows.WindowCenter.show(ctx, com.faiza.ai.ui.windows.WindowKind.CODE) }
+        }
+    }
+
     private val longClient by lazy {
         AIProviders.http.newBuilder().readTimeout(600, TimeUnit.SECONDS).callTimeout(900, TimeUnit.SECONDS).build()
     }
@@ -101,6 +123,7 @@ object CodeAgent {
         val app = ctx.applicationContext
         log.value = emptyList()
         outcome.value = null
+        openLiveWindow(app)
         job = scope.launch {
             try {
                 val o = run(app, request, existingSlug)
@@ -202,7 +225,9 @@ object CodeAgent {
                     else appendLine("Write ALL files of the plan now.")
                 }
             )
-            val n = project.apply(CodeParsers.parseFiles(reply))
+            val edits = CodeParsers.parseFiles(reply)
+            showWritten(edits)
+            val n = project.apply(edits)
             say(ctx, "💾 $n file(s) written")
         }
         if (project.files().isEmpty()) throw IllegalStateException("The coder didn't produce any files")
@@ -213,7 +238,9 @@ object CodeAgent {
             ai, Stage.TESTER, testerSystem(kind),
             "PLAN:\n$planText\n\nPROJECT FILES:\n${CodeParsers.bundle(project.textFiles(), 150_000)}"
         )
-        say(ctx, "💾 ${project.apply(CodeParsers.parseFiles(testReply))} test file(s) written")
+        val testEdits = CodeParsers.parseFiles(testReply)
+        showWritten(testEdits)
+        say(ctx, "💾 ${project.apply(testEdits)} test file(s) written")
 
         // 4. Run → review → fix, until approved.
         var approved = false
@@ -257,7 +284,9 @@ object CodeAgent {
                 },
                 shot
             )
-            val n = project.apply(CodeParsers.parseFiles(fixReply))
+            val fixEdits = CodeParsers.parseFiles(fixReply)
+            showWritten(fixEdits)
+            val n = project.apply(fixEdits)
             say(ctx, "💾 $n file(s) fixed")
             if (n == 0) say(ctx, "⚠️ The fixer changed nothing this round")
         }

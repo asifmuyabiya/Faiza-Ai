@@ -14,6 +14,8 @@ class WindowKindTest {
         assertEquals(WindowKind.CARD, WindowKind.from("weather"))
         assertEquals(WindowKind.MUSIC, WindowKind.from("song"))
         assertEquals(WindowKind.TASKS, WindowKind.from("progress"))
+        assertEquals(WindowKind.CODE, WindowKind.from("code"))
+        assertEquals(WindowKind.CODE, WindowKind.from("terminal"))
         assertNull(WindowKind.from("whatsapp"))
         assertNull(WindowKind.from(null))
     }

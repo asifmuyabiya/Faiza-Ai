@@ -180,7 +180,8 @@ abstract class FloatWindow(protected val ctx: Context, val kind: WindowKind) {
 /** The mini apps. */
 enum class WindowKind(val emoji: String, val title: String) {
     CAMERA("📷", "Camera"), CALCULATOR("🧮", "Calculator"), BROWSER("🌐", "Research"), NOTES("📝", "Notes"),
-    TIMER("⏱️", "Timer"), TASKS("🧾", "Tasks"), TRANSLATE("🌍", "Translate"), CARD("🌤️", "Info"), MUSIC("🎵", "Music");
+    TIMER("⏱️", "Timer"), TASKS("🧾", "Tasks"), TRANSLATE("🌍", "Translate"), CARD("🌤️", "Info"), MUSIC("🎵", "Music"),
+    CODE("💻", "Code");
 
     companion object {
         fun from(s: String?): WindowKind? = values().firstOrNull {
@@ -192,6 +193,7 @@ enum class WindowKind(val emoji: String, val title: String) {
             "plan", "progress" -> TASKS
             "weather", "news", "info" -> CARD
             "player", "song" -> MUSIC
+            "coding", "terminal", "code studio" -> CODE
             else -> null
         }
     }

@@ -788,6 +788,11 @@ class PrefsManager(private val context: Context) {
     var codeMaxRounds: Int
         get() = prefs.getInt("code_max_rounds", 6)
         set(value) = prefs.edit().putInt("code_max_rounds", value).apply()
+
+    /** Code Studio types its code live in a floating 💻 window over any app. */
+    var codeLiveWindow: Boolean
+        get() = prefs.getBoolean("code_live_window", true)
+        set(value) = prefs.edit().putBoolean("code_live_window", value).apply()
     /** "day|model" — the automatic pick, refreshed daily. */
     var researchModelAuto: String
         get() = prefs.getString("research_model_auto", "") ?: ""

@@ -44,6 +44,7 @@ object WindowCenter {
             WindowKind.TRANSLATE -> TranslateWindow(app)
             WindowKind.CARD -> CardWindow(app)
             WindowKind.MUSIC -> MusicWindow(app)
+            WindowKind.CODE -> CodeWindow(app)
         }
         open[kind] = w
         w.show()
@@ -68,18 +69,19 @@ object WindowCenter {
             "window", "🪟", "Mini windows", "\"ক্যালকুলেটর খোলো\" · \"নোট ছোট করে রাখো\" · \"সব বন্ধ করো\"",
             "Faiza's own floating mini apps over the screen, so the user never has to open a phone app: camera, " +
                     "calculator, research (browser), notes, timer, tasks (plan progress), translate, card (weather/news/info), " +
+                    "code (Code Studio typing its code live), " +
                     "music (play/pause/next). action=open|minimize|restore|close|close_all|list. Prefer these over opening " +
                     "the phone's own apps (Camera, Calculator, Chrome, Keep, Clock, Translate…).",
             listOf(
                 ToolParam("action", ParamType.STRING, "open | minimize | restore | close | close_all | list"),
-                ToolParam("window", ParamType.STRING, "camera | calculator | research | notes | timer | tasks | translate | card | music", required = false)
+                ToolParam("window", ParamType.STRING, "camera | calculator | research | notes | timer | tasks | translate | card | music | code", required = false)
             )
         ) { ctx, args ->
             val action = args.require("action").lowercase()
             main {
                 if (action == "list") return@main "OPEN: " + openKinds().joinToString { it.name.lowercase() }.ifEmpty { "none" }
                 if (action == "close_all") { closeAll(); return@main "All windows closed." }
-                val kind = WindowKind.from(args.str("window")) ?: return@main "ERROR: which window? (camera, calculator, research, notes, timer, tasks, translate, card, music)"
+                val kind = WindowKind.from(args.str("window")) ?: return@main "ERROR: which window? (camera, calculator, research, notes, timer, tasks, translate, card, music, code)"
                 when (action) {
                     "open", "show", "restore" -> if (show(ctx, kind) != null) "${kind.title} window is open." else NO_OVERLAY
                     "minimize", "hide" -> get(kind)?.let { it.minimize(); "${kind.title} minimised to a bubble." } ?: "${kind.title} isn't open."
