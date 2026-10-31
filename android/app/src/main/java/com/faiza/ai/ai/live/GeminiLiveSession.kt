@@ -549,12 +549,7 @@ class GeminiLiveSession(
                 val echo = EchoText.isEchoTurn(heard, spoken) || (loudDuplex && !userSaidSomething && heard.isEmpty())
                 // A stop word (even one transcribed late) means the user really stopped her: don't carry on.
                 val told = recentlyStoppedByUser() || EchoText.isStopCommand(heard, spoken)
-                if (echo && !told && !isSpeaking && !stopped) {
-                    echoResumes++
-                    synchronized(heardSinceTurn) { heardSinceTurn.setLength(0) }
-                    sendText("[ECHO] That sound was only your own voice from the loudspeaker, not the user. Continue your " +
-                            "answer exactly from where you stopped — don't repeat what you already said, don't mention this.")
-                }
+                if (echo && !told && !isSpeaking && !stopped) resumeAfterEcho()
                 synchronized(overTalkText) { overTalkText.setLength(0) }
             } else synchronized(overTalkText) { overTalkText.setLength(0) }
         }
@@ -593,6 +588,11 @@ class GeminiLiveSession(
         } else if (EchoText.isUserSpeech(heard, spoken)) {
             synchronized(overTalkText) { overTalkText.setLength(0) }
             silenceForBargeIn()
+            // If no answer to the user follows, it was only her mis-heard echo: don't leave her stuck in silence.
+            if (!muteMicWhileSpeaking) scope.launch {
+                delay(3_000)
+                if (!isSpeaking && !toolRunning && !recentlyStoppedByUser() && !stopped) resumeAfterEcho()
+            }
         } else if (heard.size >= 3 && EchoText.echoShare(heard, spoken) >= 0.8) {
             // Only her echo got through: be a little stricter from now on.
             synchronized(overTalkText) { overTalkText.setLength(0) }
@@ -800,7 +800,7 @@ class GeminiLiveSession(
                     if (fullDuplex) {
                         // Loudspeaker: her own echo is loud too, so loudness can't tell who's talking — the AI decides.
                         val action = barge.onEchoChunk(level, outputLevel(t), t)
-                        if (!loudDuplex && action == BargeInDetector.Action.INTERRUPT) silenceForBargeIn()
+                        if (!loudDuplex && action == BargeInDetector.Action.INTERRUPT) localBargeIn()
                         while (held.isNotEmpty()) { val c = held.removeFirst(); sendAudio(c, c.size) }
                         sendAudio(buffer, n)
                         continue
@@ -808,7 +808,7 @@ class GeminiLiveSession(
                     when (barge.onEchoChunk(level, outputLevel(t), t)) {
                         BargeInDetector.Action.INTERRUPT -> {
                             // Clearly the user: cut her off NOW, then forward the speech.
-                            silenceForBargeIn()
+                            localBargeIn()
                             while (held.isNotEmpty()) { val c = held.removeFirst(); sendAudio(c, c.size) }
                             sendAudio(buffer, n)
                         }
@@ -847,6 +847,35 @@ class GeminiLiveSession(
         userStoppedAt = SystemClock.elapsedRealtime()
         silenceForBargeIn()
         main.post { userInterrupt() }
+    }
+
+    @Volatile private var lastResumeAt = 0L
+
+    /** She was stopped by a sound that turned out not to be the user: go on from where she stopped. */
+    private fun resumeAfterEcho() {
+        val now = SystemClock.elapsedRealtime()
+        if (echoResumes >= 3 || now - lastResumeAt < 3_000) return
+        lastResumeAt = now
+        echoResumes++
+        synchronized(heardSinceTurn) { heardSinceTurn.setLength(0) }
+        sendText("[ECHO] That sound was only your own voice from the loudspeaker, not the user. Continue your " +
+                "answer exactly from where you stopped — don't repeat what you already said, don't mention this.")
+    }
+
+    /**
+     * The phone itself heard a voice clearly above her echo: stop her at once. If no words from the user follow
+     * (it was only a noise or her own echo), she carries on — she never gets stuck in silence.
+     */
+    private fun localBargeIn() {
+        if (!echoActive) return
+        silenceForBargeIn()
+        if (muteMicWhileSpeaking) return
+        val at = SystemClock.elapsedRealtime()
+        scope.launch {
+            delay(2_200)
+            val userSpoke = lastInputAt >= at - 300
+            if (!userSpoke && !recentlyStoppedByUser() && !isSpeaking && !stopped) resumeAfterEcho()
+        }
     }
 
     /** User interrupted: silence Faiza at once and drop the rest of the turn she was speaking. */
@@ -914,6 +943,11 @@ class GeminiLiveSession(
     private fun startCallAudioRouting() {
         val headset = bluetoothHeadset()
         if (headset == null) {
+            // Owner: "ফোন কলে লাউডস্পিকারের কথা অপর পাশের লোক শোনে না, কিন্তু আমার আস্তে কথাও শোনে". That is the
+            // phone's CALL echo canceller: it only works when her voice plays on the call path. So with "stop when I
+            // talk" on, the loudspeaker now uses real call mode (like a WhatsApp call on speaker) instead of media.
+            val callLoud = loudspeaker && bargeIn && !muteMicWhileSpeaking && !forceSpeaker && !headsetConnected()
+            if (callLoud && enterCallMode()) return
             if (loudspeaker && !forceSpeaker && !headsetConnected()) {
                 loudDuplex = bargeIn && !muteMicWhileSpeaking
                 fullDuplex = loudDuplex
@@ -959,6 +993,35 @@ class GeminiLiveSession(
             routedBluetooth = true
             fullDuplex = !muteMicWhileSpeaking
         }
+    }
+
+    /**
+     * Call mode on the LOUD speaker: her voice on the voice-call stream, the mic on VOICE_COMMUNICATION with the
+     * phone's echo canceller — so her own voice is removed from the mic and even a soft word from the user gets through.
+     */
+    @Suppress("DEPRECATION")
+    private fun enterCallMode(): Boolean = runCatching {
+        previousAudioMode = audioManager.mode
+        previousSpeakerOn = audioManager.isSpeakerphoneOn
+        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+        val speaker = if (Build.VERSION.SDK_INT >= 31)
+            audioManager.availableCommunicationDevices.firstOrNull { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
+        else null
+        if (speaker != null) audioManager.setCommunicationDevice(speaker) else audioManager.isSpeakerphoneOn = true
+        // Loud like a video call on speaker: the call volume is usually set low.
+        val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL)
+        val want = (max * 0.9f).toInt().coerceAtLeast(1)
+        if (audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL) < want) {
+            audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, want, 0)
+        }
+        routedCallSpeaker = true
+        loudDuplex = false
+        fullDuplex = true
+        barge = BargeInDetector(hardwareEchoCanceller = true, callMode = true)
+        true
+    }.getOrElse {
+        runCatching { audioManager.mode = previousAudioMode }
+        false
     }
 
     @Suppress("DEPRECATION")
