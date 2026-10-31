@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="32dp">
+
+        <LinearLayout style="@style/Widget.Faiza.TopBar">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                style="@style/Widget.Faiza.BackButton" />
+
+            <TextView
+                style="@style/Text.Faiza.Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Life modes" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Text.Faiza.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:text="While a mode is on, Faiza declines calls and texts the caller politely. VIPs and anyone calling twice in 3 minutes still ring." />
+
+        <!-- The mode that is on now -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardActive"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="@color/primary_dark"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tvActiveEmoji"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🚗"
+                    android:textSize="30sp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvActiveTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Driving mode is on"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:id="@+id/tvActiveSub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="No calls yet"
+                        android:textColor="#D9FFFFFF"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btnActiveOff"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_pill"
+                    android:fontFamily="sans-serif-medium"
+                    android:paddingStart="14dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="8dp"
+                    android:text="Turn off"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Shown only when a permission is missing -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardPerms"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <LinearLayout style="@style/Widget.Faiza.Row">
+
+                <ImageView
+                    style="@style/Widget.Faiza.IconTile"
+                    android:background="@drawable/bg_tile_amber"
+                    android:src="@drawable/ic_phone"
+                    app:tint="@color/tile_amber" />
+
+                <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                    <TextView
+                        style="@style/Widget.Faiza.RowTitle"
+                        android:text="Allow call handling" />
+
+                    <TextView
+                        android:id="@+id/tvPermsSub"
+                        style="@style/Widget.Faiza.RowSubtitle"
+                        android:text="So Faiza can decline calls and text the caller" />
+                </LinearLayout>
+
+                <ImageView style="@style/Widget.Faiza.Chevron" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Modes -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/Text.Faiza.Section"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:layout_marginBottom="0dp"
+                android:layout_weight="1"
+                android:text="Modes" />
+
+            <TextView
+                android:id="@+id/btnNewMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:fontFamily="sans-serif-medium"
+                android:paddingStart="10dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="6dp"
+                android:text="+ Create a mode"
+                android:textColor="@color/primary_light"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/modeList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Automatic -->
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Turn on by itself" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/autoList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Callers -->
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Callers" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/callerList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Recent -->
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recent calls in a mode" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardRecent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/recentList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/tvRecentEmpty"
+            style="@style/Text.Faiza.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_empty_card"
+            android:gravity="center"
+            android:padding="20dp"
+            android:text="No calls yet. Try saying “I'm driving” or “ঘুমাতে যাচ্ছি”." />
+    </LinearLayout>
+</ScrollView>

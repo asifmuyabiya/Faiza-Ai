@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the Faiza icon: talk now, or jump straight to a feature. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_mic"
+        android:shortcutId="talk"
+        android:shortcutLongLabel="@string/shortcut_talk_long"
+        android:shortcutShortLabel="@string/shortcut_talk">
+        <intent
+            android:action="android.intent.action.ASSIST"
+            android:targetClass="com.faiza.ai.assist.AssistActivity"
+            android:targetPackage="com.faiza.ai" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_bolt"
+        android:shortcutId="gaming"
+        android:shortcutShortLabel="@string/shortcut_gaming">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.faiza.ai.ui.GamingActivity"
+            android:targetPackage="com.faiza.ai" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_chip"
+        android:shortcutId="code"
+        android:shortcutShortLabel="@string/shortcut_code">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.faiza.ai.ui.CodeStudioActivity"
+            android:targetPackage="com.faiza.ai" />
+    </shortcut>
+</shortcuts>

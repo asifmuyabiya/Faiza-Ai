@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Faiza AI</string>
+    <string name="wake_word">Hey Faiza</string>
+    <string name="version">3.0.0</string>
+
+    <!-- Personas -->
+    <string name="persona_faiza">Faiza</string>
+    <string name="persona_friday">Friday</string>
+    <string name="persona_venom">Venom</string>
+
+    <!-- Accessibility -->
+    <string name="accessibility_description">Faiza AI needs accessibility access to control your phone with voice commands. This allows Faiza to tap buttons, read screen content, and automate tasks for you.</string>
+
+    <!-- Notification -->
+    <string name="notification_listening">Faiza AI is listening...</string>
+    <string name="notification_processing">Processing your command...</string>
+    <string name="notification_idle">Faiza AI is ready. Say \"Hey Faiza\"</string>
+    <string name="shortcut_talk">Talk to Faiza</string>
+    <string name="shortcut_talk_long">Talk to Faiza now</string>
+    <string name="shortcut_gaming">Gaming mode</string>
+    <string name="shortcut_code">Code Studio</string>
+    <string name="tile_label">Faiza</string>
+</resources>

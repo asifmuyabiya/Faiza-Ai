@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="28dp">
+
+        <LinearLayout style="@style/Widget.Faiza.TopBar">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                style="@style/Widget.Faiza.BackButton" />
+
+            <TextView
+                style="@style/Text.Faiza.Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Connect AI" />
+        </LinearLayout>
+
+        <!-- Step indicator -->
+        <LinearLayout
+            android:id="@+id/stepIndicator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="28dp"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/step1Dot"
+                android:layout_width="0dp"
+                android:layout_height="4dp"
+                android:layout_weight="1"
+                android:background="@color/primary" />
+
+            <View
+                android:id="@+id/step2Dot"
+                android:layout_width="0dp"
+                android:layout_height="4dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:background="@color/stroke" />
+
+            <View
+                android:id="@+id/step3Dot"
+                android:layout_width="0dp"
+                android:layout_height="4dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:background="@color/stroke" />
+        </LinearLayout>
+
+        <!-- Step 1 -->
+        <LinearLayout
+            android:id="@+id/step1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <ImageView
+                style="@style/Widget.Faiza.IconTile"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:padding="14dp"
+                android:src="@drawable/ic_chip" />
+
+            <TextView
+                style="@style/Text.Faiza.Display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Give Faiza a brain" />
+
+            <TextView
+                style="@style/Text.Faiza.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Faiza understands you using Google Gemini — one of the best AI models, free to use with your own key."
+                android:textColor="@color/text_secondary" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        style="@style/Text.Faiza.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawablePadding="12dp"
+                        android:text="Free — no credit card needed"
+                        app:drawableStartCompat="@drawable/ic_check"
+                        app:drawableTint="@color/success" />
+
+                    <TextView
+                        style="@style/Text.Faiza.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:drawablePadding="12dp"
+                        android:text="Free daily usage — plenty for personal use"
+                        app:drawableStartCompat="@drawable/ic_check"
+                        app:drawableTint="@color/success" />
+
+                    <TextView
+                        style="@style/Text.Faiza.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:drawablePadding="12dp"
+                        android:text="Your key stays on this phone"
+                        app:drawableStartCompat="@drawable/ic_check"
+                        app:drawableTint="@color/success" />
+
+                    <TextView
+                        style="@style/Text.Faiza.Body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:drawablePadding="12dp"
+                        android:text="Takes about 2 minutes"
+                        app:drawableStartCompat="@drawable/ic_check"
+                        app:drawableTint="@color/success" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStep1Next"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Let's set it up" />
+        </LinearLayout>
+
+        <!-- Step 2 -->
+        <LinearLayout
+            android:id="@+id/step2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ImageView
+                style="@style/Widget.Faiza.IconTile"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:padding="14dp"
+                android:src="@drawable/ic_key" />
+
+            <TextView
+                style="@style/Text.Faiza.Display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Get your free key" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        style="@style/Text.Faiza.Heading"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1.  Open Google AI Studio"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        style="@style/Text.Faiza.Caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="22dp"
+                        android:text="Sign in with your Google account" />
+
+                    <TextView
+                        style="@style/Text.Faiza.Heading"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="2.  Tap &quot;Create API key&quot;"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        style="@style/Text.Faiza.Caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="22dp"
+                        android:text="Pick any project, or create a new one" />
+
+                    <TextView
+                        style="@style/Text.Faiza.Heading"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="3.  Copy the key"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        style="@style/Text.Faiza.Caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="22dp"
+                        android:text="Use the small copy button next to the key (starts with AIza)" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpenAIStudio"
+                style="@style/Widget.Faiza.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Open Google AI Studio" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStep2Next"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="I have my key" />
+        </LinearLayout>
+
+        <!-- Step 3 -->
+        <LinearLayout
+            android:id="@+id/step3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ImageView
+                style="@style/Widget.Faiza.IconTile"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:padding="14dp"
+                android:src="@drawable/ic_lock" />
+
+            <TextView
+                style="@style/Text.Faiza.Display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Paste your key" />
+
+            <EditText
+                android:id="@+id/etApiKey"
+                style="@style/Widget.Faiza.Input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="monospace"
+                android:hint="AIza…"
+                android:importantForAutofill="no"
+                android:inputType="textNoSuggestions|textVisiblePassword"
+                android:maxLines="1"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvKeyStatus"
+                style="@style/Text.Faiza.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVerifyKey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Verify &amp; save" />
+
+            <ProgressBar
+                android:id="@+id/progressVerify"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="14dp"
+                android:indeterminateTint="@color/primary_light"
+                android:visibility="gone" />
+
+            <TextView
+                style="@style/Text.Faiza.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:gravity="center"
+                android:text="Your key is stored only on this phone and is sent only to Google."
+                android:textColor="@color/text_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Success -->
+        <LinearLayout
+            android:id="@+id/stepSuccess"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <FrameLayout
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_marginTop="24dp">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/orb_glow" />
+
+                <View
+                    android:layout_width="84dp"
+                    android:layout_height="84dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/orb_core" />
+
+                <ImageView
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_check"
+                    app:tint="#FFFFFF" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/Text.Faiza.Display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Faiza is ready" />
+
+            <TextView
+                style="@style/Text.Faiza.Caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="Start Faiza from the dashboard and just talk."
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGoToDashboard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="Go to dashboard" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="32dp">
+
+        <LinearLayout style="@style/Widget.Faiza.TopBar">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                style="@style/Widget.Faiza.BackButton" />
+
+            <TextView
+                style="@style/Text.Faiza.Title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="Notifications" />
+
+            <TextView
+                android:id="@+id/btnClear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:fontFamily="sans-serif-medium"
+                android:padding="10dp"
+                android:text="Clear"
+                android:textColor="@color/primary_light"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Text.Faiza.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginBottom="16dp"
+            android:text="What Faiza did on her own — reminders, replies, macros and more." />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/logList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/tvLogEmpty"
+            style="@style/Text.Faiza.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_empty_card"
+            android:gravity="center"
+            android:padding="24dp"
+            android:text="Nothing yet. When a reminder runs or Faiza answers a message for you, it shows up here." />
+    </LinearLayout>
+</ScrollView>

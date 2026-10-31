@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Always dark: a DayNight theme made dialogs/inputs unreadable on light-mode phones. -->
+    <style name="Theme.FaizaAI" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryVariant">@color/accent</item>
+        <item name="colorOnSecondary">#06060A</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorError">@color/danger</item>
+        <item name="colorControlActivated">@color/primary</item>
+        <item name="colorControlNormal">@color/text_muted</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorHint">@color/text_muted</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="materialButtonStyle">@style/Widget.Faiza.Button</item>
+        <item name="materialCardViewStyle">@style/Widget.Faiza.Card</item>
+        <item name="switchStyle">@style/Widget.Faiza.Switch</item>
+        <item name="alertDialogTheme">@style/Theme.FaizaAI.Dialog</item>
+        <item name="materialAlertDialogTheme">@style/Theme.FaizaAI.Dialog</item>
+    </style>
+
+    <style name="Theme.FaizaAI.Splash" parent="Theme.FaizaAI" />
+
+    <!-- Invisible screen used when the assistant button starts Faiza. -->
+    <style name="Theme.FaizaAI.Translucent" parent="Theme.FaizaAI">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.FaizaAI.Dialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="colorPrimary">@color/primary_light</item>
+        <item name="colorAccent">@color/primary_light</item>
+        <item name="colorSurface">@color/surface_2</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:windowBackground">@drawable/bg_dialog</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorAlertDialogListItem">@color/text_primary</item>
+        <item name="colorControlActivated">@color/primary_light</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Faiza.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.Faiza.DialogButton.Muted</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.Faiza.DialogButton.Muted</item>
+    </style>
+</resources>

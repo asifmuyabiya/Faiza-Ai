@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No flagRequestTouchExplorationMode: it turns on "explore by touch" and breaks normal tapping.
+     Only window changes are requested: every-text-change events kept the phone busy and drained the battery,
+     and the screen is read on demand anyway. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows|flagRequestFilterKeyEvents"
+    android:canRequestFilterKeyEvents="true"
+    android:canPerformGestures="true"
+    android:canRetrieveWindowContent="true"
+    android:canTakeScreenshot="true"
+    android:description="@string/accessibility_description"
+    android:notificationTimeout="100"
+    android:settingsActivity="com.faiza.ai.ui.SettingsActivity" />

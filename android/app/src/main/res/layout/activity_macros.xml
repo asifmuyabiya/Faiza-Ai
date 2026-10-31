@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="32dp">
+
+        <LinearLayout style="@style/Widget.Faiza.TopBar">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                style="@style/Widget.Faiza.BackButton" />
+
+            <TextView
+                style="@style/Text.Faiza.Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Macros" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Text.Faiza.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="6dp"
+            android:layout_marginBottom="16dp"
+            android:text="Teach Faiza a series of taps and typing once, then replay it with one sentence." />
+
+        <!-- How to record (video 35:37) -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="16dp">
+
+                <LinearLayout
+                    style="@style/Widget.Faiza.Row"
+                    android:background="@null">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_red"
+                        android:src="@drawable/ic_mic"
+                        app:tint="@color/tile_red" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Record by voice" />
+
+                        <TextView
+                            android:id="@+id/tvRecordHint"
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Say “Record a macro named Notes”" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    style="@style/Text.Faiza.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="70dp"
+                    android:layout_marginEnd="16dp"
+                    android:lineSpacingMultiplier="1.45"
+                    android:text="1 · Say each step: “Open Keep”, “Tap New note”, “Type hello”&#10;2 · “Remove last step” undoes a mistake&#10;3 · “Save macro” when you're done&#10;4 · Later just say “Run Notes”" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Your macros" />
+
+        <LinearLayout
+            android:id="@+id/macroList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/tvEmpty"
+            style="@style/Text.Faiza.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_empty_card"
+            android:gravity="center"
+            android:padding="20dp"
+            android:text="No macros yet. Start Faiza and say “Record a macro named Good morning”." />
+    </LinearLayout>
+</ScrollView>

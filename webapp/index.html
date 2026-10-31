@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Faiza AI — PC preview</title>
+<style>
+:root{
+  --bg:#07070B; --surface:#111118; --surface2:#1A1A24; --stroke:#20202D; --divider:#1B1B26;
+  --text:#F4F4F8; --text2:#A1A1B5; --muted:#6B6B80;
+  --primary:#8B5CF6; --primaryLight:#B9A2FB; --primaryDark:#6D28D9; --accent:#22D3EE; --pink:#EC4899;
+  --success:#34D399; --warning:#FBBF24; --danger:#F87171;
+  --violet:#B69CFF; --blue:#7DB4FF; --cyan:#5EE0F2; --green:#5EE3AE; --amber:#FCCB55;
+  --orange:#FDA669; --tpink:#F98FC7; --red:#FB8B8B; --slate:#AEB6C8;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#050509;font-family:'Segoe UI',system-ui,Roboto,sans-serif;color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:14px;padding:22px 12px 40px}
+.topnote{color:var(--text2);font-size:13px;text-align:center;max-width:430px;line-height:1.5}
+.topnote b{color:var(--primaryLight)}
+/* phone frame */
+.phone{position:relative;width:390px;max-width:96vw;height:800px;max-height:88vh;border-radius:42px;
+  background:var(--bg);overflow:hidden;box-shadow:0 0 0 11px #15151c,0 0 0 13px #2a2a33,0 30px 80px rgba(0,0,0,.6);}
+.phone.awake::before{content:"";position:absolute;inset:0;border-radius:42px;padding:3px;pointer-events:none;z-index:50;
+  background:conic-gradient(from var(--a,0deg),#ff2d55,#ff9500,#ffd60a,#34c759,#00c7be,#0a84ff,#5e5ce6,#bf5af2,#ff2d55);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  animation:spin 6s linear infinite;opacity:.95}
+@keyframes spin{to{--a:360deg}}
+@property --a{syntax:'<angle>';initial-value:0deg;inherits:false}
+.statusbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:12px;color:var(--text2)}
+.screen{position:absolute;inset:34px 0 0 0;overflow-y:auto;overflow-x:hidden;display:none;scrollbar-width:thin}
+.screen.active{display:block}
+.screen::-webkit-scrollbar{width:5px}.screen::-webkit-scrollbar-thumb{background:#2a2a35;border-radius:3px}
+.pad{padding:8px 16px 90px}
+/* header */
+.hdr{display:flex;align-items:center;gap:12px;padding:8px 4px 10px}
+.iconbtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:transparent;border:0;color:var(--text);
+  font-size:20px;cursor:pointer}.iconbtn:hover{background:var(--surface2)}
+.title{font-size:22px;font-weight:600;flex:1}
+.avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primaryDark));
+  display:grid;place-items:center;font-weight:700;font-size:15px}
+/* cards & rows */
+.card{background:var(--surface);border:1px solid var(--stroke);border-radius:18px;margin:12px 0;overflow:hidden}
+.card.padc{padding:16px}
+.section{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);font-weight:600;margin:20px 6px 6px}
+.caption{color:var(--text2);font-size:13px;line-height:1.5;margin:6px}
+.row{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer}
+.row:hover{background:var(--surface2)}
+.row + .row{border-top:1px solid var(--divider)}
+.tile{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:19px;flex:none}
+.rt{flex:1;min-width:0}.rt .t{font-weight:600;font-size:15px}.rt .s{color:var(--text2);font-size:12.5px;margin-top:2px}
+.chev{color:var(--muted);font-size:20px}
+.sw{width:46px;height:27px;border-radius:14px;background:#2a2a38;position:relative;flex:none;transition:.2s;cursor:pointer}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:.2s}
+.sw.on{background:var(--primary)}.sw.on::after{left:22px}
+/* home */
+.greet{font-size:25px;font-weight:700;margin:6px 6px 2px}
+.subline{color:var(--text2);font-size:14px;margin:0 6px 14px;display:flex;align-items:center;gap:7px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--success)}
+.orbwrap{display:grid;place-items:center;padding:14px 0 18px}
+.orb{width:148px;height:148px;border-radius:50%;cursor:pointer;
+  background:radial-gradient(circle at 35% 30%,#c4b5fd,#8b5cf6 45%,#6d28d9 80%);
+  box-shadow:0 0 50px rgba(139,92,246,.55),inset 0 0 40px rgba(255,255,255,.15);animation:breathe 3.5s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.chips{display:flex;gap:9px;overflow-x:auto;padding:2px 6px 4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{background:var(--surface);border:1px solid var(--stroke);border-radius:20px;padding:9px 15px;font-size:13.5px;
+  white-space:nowrap;display:flex;gap:7px;align-items:center;cursor:pointer}.chip:hover{border-color:var(--primary)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 6px}
+.mini{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;padding:13px;cursor:pointer}
+.mini .ic{font-size:17px}.mini .lab{color:var(--text2);font-size:12px;margin-top:8px}.mini .val{font-weight:700;font-size:17px;margin-top:3px}
+.askbox{display:flex;gap:10px;align-items:center;margin:14px 6px;background:var(--surface);border:1px solid var(--stroke);
+  border-radius:16px;padding:6px 6px 6px 16px}
+.askbox input{flex:1;background:transparent;border:0;color:var(--text);font-size:14.5px;outline:none;padding:10px 0}
+.send{width:44px;height:44px;border-radius:50%;background:var(--primary);border:0;color:#fff;font-size:18px;cursor:pointer;flex:none}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 6px}
+.shortcut{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;padding:16px;cursor:pointer}
+.shortcut:hover{border-color:var(--primary)}
+.shortcut .lab{font-weight:600;margin-top:12px}.shortcut .s{color:var(--text2);font-size:12px;margin-top:3px}
+/* bottom nav */
+.bnav{position:absolute;left:0;right:0;bottom:0;height:70px;background:rgba(17,17,24,.95);backdrop-filter:blur(10px);
+  border-top:1px solid var(--stroke);display:flex;align-items:center;justify-content:space-around;z-index:40}
+.bnav button{background:0;border:0;color:var(--text2);font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.bnav button.mic{width:56px;height:56px;border-radius:50%;background:var(--primary);color:#fff;font-size:22px;margin-top:-24px;
+  box-shadow:0 8px 24px rgba(139,92,246,.5)}
+.bnav button .bi{font-size:19px}.bnav button.on{color:var(--primaryLight)}
+/* drawer */
+.drawer{position:absolute;inset:0;z-index:60;display:none}
+.drawer.open{display:block}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.dpanel{position:absolute;top:0;left:0;bottom:0;width:300px;max-width:82%;background:#0d0d14;border-right:1px solid var(--stroke);
+  overflow-y:auto;padding:22px 14px;transform:translateX(-100%);transition:.25s}
+.drawer.open .dpanel{transform:none}
+.dhead{display:flex;align-items:center;gap:12px;padding:6px 8px 18px}
+.ditem{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;cursor:pointer;font-weight:500}
+.ditem:hover{background:var(--surface2)}.ditem.on{background:rgba(139,92,246,.18);color:var(--primaryLight)}
+.dsec{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 16px 6px}
+/* level cards */
+.lvl{border:1px solid var(--stroke);border-radius:16px;padding:16px;margin-top:10px;cursor:pointer}
+.lvl.sel{border-color:var(--primary);background:rgba(139,92,246,.08)}
+.lvl .h{font-size:17px;font-weight:600;display:flex;justify-content:space-between}
+.lvl .d{color:var(--text2);font-size:13.5px;line-height:1.35;margin-top:6px}
+.note{background:var(--surface2);border-radius:12px;padding:12px 14px;color:var(--text2);font-size:13px;line-height:1.4;margin-top:12px}
+.note.warn{background:rgba(251,191,36,.12)}
+.seg{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.seg .o{padding:9px 16px;border-radius:20px;border:1px solid var(--stroke);font-size:13.5px;cursor:pointer}
+.seg .o.on{background:var(--primary);border-color:var(--primary);color:#fff}
+/* chat */
+.msgs{padding:10px 14px 90px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:78%;padding:11px 14px;border-radius:16px;font-size:14.5px;line-height:1.4}
+.msg.me{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:5px}
+.msg.ai{align-self:flex-start;background:var(--surface2);border-bottom-left-radius:5px}
+.pager{position:absolute;bottom:14px;left:0;right:0;display:flex;gap:10px;justify-content:center}
+.pager button{background:var(--surface);border:1px solid var(--stroke);color:var(--text);border-radius:12px;padding:8px 16px;cursor:pointer}
+.backrow{display:flex;align-items:center;gap:8px;padding:8px 4px 6px}
+.pill{display:inline-block;padding:3px 9px;border-radius:9px;font-size:11px;font-weight:700;background:rgba(139,92,246,.2);color:var(--primaryLight)}
+</style>
+</head>
+<body>
+<div class="topnote">
+  <b>Faiza AI — PC preview</b><br>
+  এটা অ্যাপের ওয়েব-ক্লোন, শুধু দেখার জন্য। কল কাটা / স্ক্রিন পড়া / ভয়েসের মতো ফোন-নির্ভর কাজ ব্রাউজারে চলবে না — আসল কাজ ফোনের APK-তে।
+</div>
+
+<div class="phone awake" id="phone">
+  <div class="statusbar"><span>10:57</span><span>● Faiza</span><span>📶 🔋73%</span></div>
+
+  <!-- HOME -->
+  <div class="screen active" id="s-home"><div class="pad">
+    <div class="hdr">
+      <button class="iconbtn" onclick="openDrawer()">☰</button>
+      <button class="iconbtn" onclick="go('activity')">🔔</button>
+      <div style="flex:1"></div>
+      <div class="avatar" onclick="go('settings')">A</div>
+    </div>
+    <div class="greet">Hi Asif 👋</div>
+    <div class="subline"><span class="dot"></span><span id="homeStatus">Faiza is awake and listening</span></div>
+    <div class="orbwrap"><div class="orb" onclick="toggleAwake()"></div></div>
+    <div class="chips">
+      <div class="chip" onclick="go('chat')">🎵 Music</div>
+      <div class="chip" onclick="go('chat')">📚 Study</div>
+      <div class="chip" onclick="go('chat')">📓 Journal</div>
+    </div>
+    <div class="grid3">
+      <div class="mini"><div class="ic">☀️</div><div class="lab">Weather</div><div class="val">29°</div></div>
+      <div class="mini"><div class="ic">📅</div><div class="lab">Today</div><div class="val">5 Oct</div></div>
+      <div class="mini"><div class="ic">💗</div><div class="lab">Mood</div><div class="val">Warm</div></div>
+    </div>
+    <div class="askbox">
+      <input id="homeAsk" placeholder="Ask Faiza anything…" onkeydown="if(event.key==='Enter')askFromHome()">
+      <button class="send" onclick="askFromHome()">➤</button>
+    </div>
+    <div class="card" onclick="go('modes')" style="cursor:pointer">
+      <div class="row"><div class="tile" style="background:rgba(139,92,246,.2)">🚗</div>
+        <div class="rt"><div class="t">Life modes</div><div class="s">Driving · Sleeping · Prayer · Meeting…</div></div><div class="chev">›</div></div>
+    </div>
+    <div class="section">Shortcuts</div>
+    <div class="grid2">
+      <div class="shortcut" onclick="go('modes')"><div class="tile" style="background:rgba(182,156,255,.18);color:var(--violet)">🌙</div><div class="lab">Life modes</div><div class="s">Driving, sleep, prayer</div></div>
+      <div class="shortcut" onclick="go('routines')"><div class="tile" style="background:rgba(94,224,242,.15);color:var(--cyan)">⏱️</div><div class="lab">Routines</div><div class="s">Reminders & alerts</div></div>
+      <div class="shortcut" onclick="toast('Macros')"><div class="tile" style="background:rgba(253,166,105,.15);color:var(--orange)">⚡</div><div class="lab">Macros</div><div class="s">Record & replay</div></div>
+      <div class="shortcut" onclick="go('settings')"><div class="tile" style="background:rgba(245,143,199,.15);color:var(--tpink)">✨</div><div class="lab">Personas</div><div class="s">Faiza, Friday, Jarvis</div></div>
+      <div class="shortcut" onclick="toast('SOS')"><div class="tile" style="background:rgba(251,139,139,.15);color:var(--red)">🛡️</div><div class="lab">SOS</div><div class="s">Emergency alerts</div></div>
+      <div class="shortcut" onclick="toast('Owner lock')"><div class="tile" style="background:rgba(251,139,139,.15);color:var(--red)">🔐</div><div class="lab">Owner lock</div><div class="s">Secret code</div></div>
+    </div>
+  </div>
+    <div class="bnav">
+      <button class="on"><span class="bi">🏠</span>Home</button>
+      <button onclick="toast('Scan')"><span class="bi">📷</span>Scan</button>
+      <button class="mic" onclick="toggleAwake()">🎙️</button>
+      <button onclick="go('activity')"><span class="bi">💡</span>Memories</button>
+      <button onclick="go('chat')"><span class="bi">💬</span>Chat</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="s-settings"><div class="pad">
+    <div class="backrow"><button class="iconbtn" onclick="go('home')">←</button><div class="title">Settings</div></div>
+    <div class="section">You & assistant</div>
+    <div class="card">
+      <div class="row" onclick="toast('Assistant name')"><div class="tile" style="background:rgba(125,180,255,.15);color:var(--blue)">🙂</div><div class="rt"><div class="t">Assistant name</div><div class="s">What you call her — Faiza</div></div><div class="chev">›</div></div>
+      <div class="row" onclick="toast('Persona')"><div class="tile" style="background:rgba(182,156,255,.18);color:var(--violet)">✨</div><div class="rt"><div class="t">Persona</div><div class="s">Faiza · Friendly & helpful</div></div><div class="chev">›</div></div>
+      <div class="row" onclick="go('secret')"><div class="tile" style="background:rgba(245,143,199,.15);color:var(--tpink)">💗</div><div class="rt"><div class="t">Secret settings</div><div class="s" id="closenessSub">Girlfriend mode · Friendly</div></div><div class="chev">›</div></div>
+      <div class="row" onclick="toggleRow(this)"><div class="tile" style="background:rgba(251,191,36,.15);color:var(--amber)">💬</div><div class="rt"><div class="t">Proactive mode</div><div class="s">Starts chatting when you're quiet</div></div><div class="sw"></div></div>
+      <div class="row" onclick="go('sleep')"><div class="tile" style="background:rgba(174,182,200,.15);color:var(--slate)">🌙</div><div class="rt"><div class="t">Sleep when quiet</div><div class="s" id="sleepSub">10 min</div></div><div class="chev">›</div></div>
+    </div>
+    <div class="section">Listening</div>
+    <div class="card">
+      <div class="row" onclick="toggleRow(this)"><div class="tile" style="background:rgba(182,156,255,.18);color:var(--violet)">🎙️</div><div class="rt"><div class="t">Live conversation</div><div class="s">Natural, real-time voice chat</div></div><div class="sw on"></div></div>
+      <div class="row" onclick="toggleRow(this)"><div class="tile" style="background:rgba(94,224,242,.15);color:var(--cyan)">🔊</div><div class="rt"><div class="t">Wake word</div><div class="s">Say "Hey Faiza" · works offline</div></div><div class="sw on"></div></div>
+    </div>
+    <div class="section">Safety & access</div>
+    <div class="card">
+      <div class="row" onclick="toast('Voice Guardian')"><div class="tile" style="background:rgba(94,227,174,.15);color:var(--green)">🛡️</div><div class="rt"><div class="t">Voice Guardian</div><div class="s">Answer only your voice</div></div><div class="chev">›</div></div>
+      <div class="row" onclick="toast('Owner lock')"><div class="tile" style="background:rgba(251,139,139,.15);color:var(--red)">🔐</div><div class="rt"><div class="t">Owner lock (secret code)</div><div class="s">Strangers must say your code</div></div><div class="chev">›</div></div>
+      <div class="row" onclick="toggleRow(this)"><div class="tile" style="background:rgba(251,191,36,.15);color:var(--amber)">🗑️</div><div class="rt"><div class="t">Delete guard</div><div class="s">Warns you before you delete</div></div><div class="sw on"></div></div>
+      <div class="row" onclick="toast('Touch Guard')"><div class="tile" style="background:rgba(251,139,139,.15);color:var(--red)">✋</div><div class="rt"><div class="t">Touch Guard</div><div class="s">Watch the phone while you're away</div></div><div class="chev">›</div></div>
+    </div>
+    <div class="section">Announcements</div>
+    <div class="card">
+      <div class="row" onclick="toggleRow(this)"><div class="tile" style="background:rgba(125,180,255,.15);color:var(--blue)">✉️</div><div class="rt"><div class="t">Message alerts</div><div class="s">New WhatsApp messages</div></div><div class="sw on"></div></div>
+      <div class="row" onclick="toggleRow(this)"><div class="tile" style="background:rgba(94,224,242,.15);color:var(--cyan)">📞</div><div class="rt"><div class="t">Call announcement</div><div class="s">Who's calling</div></div><div class="sw on"></div></div>
+      <div class="row" onclick="toast('Event triggers')"><div class="tile" style="background:rgba(253,166,105,.15);color:var(--orange)">📣</div><div class="rt"><div class="t">Event triggers</div><div class="s">What she announces on her own</div></div><div class="chev">›</div></div>
+    </div>
+  </div></div>
+
+  <!-- SECRET SETTINGS -->
+  <div class="screen" id="s-secret"><div class="pad">
+    <div class="backrow"><button class="iconbtn" onclick="go('settings')">←</button><div class="title">Secret settings</div></div>
+    <div class="card padc">
+      <div class="row" style="padding:0;cursor:default"><div class="tile" style="background:rgba(245,143,199,.15);color:var(--tpink)">💗</div>
+        <div class="rt"><div class="t">How close she is</div><div class="s">Friendly, Romantic or Intense (18+)</div></div></div>
+      <div id="levels"></div>
+      <div class="note">💡 Takes effect the next time she starts. Can't be switched by voice.</div>
+    </div>
+    <div class="card padc">
+      <div class="row" style="padding:0;cursor:default"><div class="tile" style="background:rgba(182,156,255,.18);color:var(--violet)">🔒</div>
+        <div class="rt"><div class="t">What each level allows</div><div class="s">So you know before you pick</div></div></div>
+      <div class="note">Friendly: frank, unjudging answers about adult topics, no flirting. Romantic: flirting with some warmth and innuendo, a fade to black. Intense (18+): more open in words — Google's own filter still sits above all of this.</div>
+      <div class="note warn">⚠️ Nothing involving anyone under 18, at any level. If a child's voice or words are heard, the level drops to Friendly for the rest of the conversation.</div>
+    </div>
+  </div></div>
+
+  <!-- SLEEP TIMER -->
+  <div class="screen" id="s-sleep"><div class="pad">
+    <div class="backrow"><button class="iconbtn" onclick="go('settings')">←</button><div class="title">Sleep when quiet</div></div>
+    <div class="caption">A live session drops to standby after this much silence. Saves battery and data.</div>
+    <div class="card padc"><div class="seg" id="sleepSeg"></div></div>
+  </div></div>
+
+  <!-- LIFE MODES -->
+  <div class="screen" id="s-modes"><div class="pad">
+    <div class="backrow"><button class="iconbtn" onclick="go('home')">←</button><div class="title">Life modes</div></div>
+    <div class="caption">While a mode is on, Faiza declines calls and texts the caller politely. VIPs and anyone calling twice in 3 minutes still ring.</div>
+    <div class="section">Modes</div>
+    <div class="card" id="modeList"></div>
+    <div class="section">Turn on by itself</div>
+    <div class="card">
+      <div class="row" onclick="toggleRow(this)"><div class="tile" style="background:rgba(174,182,200,.15)">🚗</div><div class="rt"><div class="t">Driving when the car connects</div><div class="s">Car Bluetooth → Driving mode</div></div><div class="sw on"></div></div>
+      <div class="row" onclick="toggleRow(this)"><div class="tile" style="background:rgba(174,182,200,.15)">😴</div><div class="rt"><div class="t">Sleeping every night</div><div class="s">11:00 PM – 7:00 AM</div></div><div class="sw"></div></div>
+      <div class="row" onclick="toggleRow(this)"><div class="tile" style="background:rgba(174,182,200,.15)">🕌</div><div class="rt"><div class="t">Prayer at namaz times</div><div class="s">20 minutes from each prayer</div></div><div class="sw"></div></div>
+    </div>
+  </div></div>
+
+  <!-- ROUTINES -->
+  <div class="screen" id="s-routines"><div class="pad">
+    <div class="backrow"><button class="iconbtn" onclick="go('home')">←</button><div class="title">Routines</div></div>
+    <div class="caption">Faiza does things on time and keeps an eye out for you.</div>
+    <div class="section">Try saying</div>
+    <div class="card padc" style="line-height:1.9;color:var(--text)">
+      "Every morning at 7, tell me the weather"<br>"In 30 minutes, remind me to call Mom"<br>"Tell me when Rahim messages on WhatsApp"<br>"In 15 seconds, tell me"
+    </div>
+  </div></div>
+
+  <!-- ACTIVITY -->
+  <div class="screen" id="s-activity"><div class="pad">
+    <div class="backrow"><button class="iconbtn" onclick="go('home')">←</button><div class="title">Notifications</div></div>
+    <div class="card padc"><span class="pill">mode</span> <b>🚗 Driving mode on</b><div class="s" style="color:var(--text2);font-size:13px;margin-top:4px">Calls get a polite text · safe on the road</div></div>
+    <div class="card padc"><span class="pill">security</span> <b>Owner verified</b><div class="s" style="color:var(--text2);font-size:13px;margin-top:4px">Secret code accepted</div></div>
+    <div class="card padc"><span class="pill">timer</span> <b>⏱️ 15 seconds — time's up</b><div class="s" style="color:var(--text2);font-size:13px;margin-top:4px">Boss, your 15 seconds are up!</div></div>
+  </div></div>
+
+  <!-- CHAT -->
+  <div class="screen" id="s-chat">
+    <div class="pad" style="padding-bottom:0">
+      <div class="backrow"><button class="iconbtn" onclick="go('home')">←</button><div class="title">Chat</div></div>
+    </div>
+    <div class="msgs" id="msgs">
+      <div class="msg ai">Hi! I'm Faiza 💜 This is the PC preview, so I'll reply with canned lines here — the real brain (Gemini) runs in the phone app.</div>
+    </div>
+    <div class="askbox" style="position:absolute;left:10px;right:10px;bottom:14px;margin:0">
+      <input id="chatIn" placeholder="Type to Faiza…" onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="send" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+
+  <!-- DRAWER -->
+  <div class="drawer" id="drawer">
+    <div class="scrim" onclick="closeDrawer()"></div>
+    <div class="dpanel">
+      <div class="dhead"><div class="avatar">F</div><div><div style="font-weight:700">Faiza</div><div style="color:var(--text2);font-size:12px">by Asif Mavia</div></div></div>
+      <div class="dsec">Home</div>
+      <div class="ditem on" onclick="go('home');closeDrawer()">🏠 Home</div>
+      <div class="ditem" onclick="go('activity');closeDrawer()">💡 Memories</div>
+      <div class="ditem" onclick="go('chat');closeDrawer()">💬 Chat</div>
+      <div class="dsec">Your phone</div>
+      <div class="ditem" onclick="go('modes');closeDrawer()">🌙 Life modes</div>
+      <div class="ditem" onclick="go('routines');closeDrawer()">⏱️ Routines</div>
+      <div class="ditem" onclick="toast('My people');closeDrawer()">💗 My people</div>
+      <div class="ditem" onclick="toast('SOS');closeDrawer()">🛡️ SOS</div>
+      <div class="dsec">Productivity</div>
+      <div class="ditem" onclick="openRoom('📈 Markets','Prices, news and what's moving');closeDrawer()">📈 Markets</div>
+      <div class="ditem" onclick="openRoom('📣 Marketing','Posts, captions, ads and ideas');closeDrawer()">📣 Marketing</div>
+      <div class="ditem" onclick="openRoom('📄 Documents','Letters, CVs, reports, summaries');closeDrawer()">📄 Documents</div>
+      <div class="ditem" onclick="openRoom('💻 Website / Coding','Code, websites, fixing errors');closeDrawer()">💻 Website / Coding</div>
+      <div class="ditem" onclick="openRoom('📚 Study / Whiteboard','Learn step by step');closeDrawer()">📚 Study / Whiteboard</div>
+      <div class="ditem" onclick="toast('Faiza rules');closeDrawer()">✅ Faiza rules</div>
+      <div class="dsec">System</div>
+      <div class="ditem" onclick="go('settings');closeDrawer()">⚙️ Settings</div>
+      <div class="ditem" onclick="toast('About');closeDrawer()">ℹ️ About</div>
+    </div>
+  </div>
+
+  <div id="toast" style="position:absolute;bottom:90px;left:50%;transform:translateX(-50%);background:#000;border:1px solid var(--stroke);
+    color:var(--text);padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:70;white-space:nowrap"></div>
+</div>
+
+<div class="topnote" style="max-width:430px">
+  টিপ: বেগুনি orb বা মাইকে ক্লিক করলে চারপাশের RGB আলো অন/অফ হয় (অ্যাপের edge glow)। সব স্ক্রিন ঘুরে দেখুন।
+</div>
+
+<script>
+let closeness=0, sleepMin=10;
+const levels=[
+  {t:"Friendly",d:"A warm, close friend. No romance — but she answers adult questions frankly, like a friend would."},
+  {t:"Romantic",d:"Pet names, flirting, nakhre, jealousy — of other girls and of other AIs — and she says what she wants too. A little heat if you bring it up. Free — one screen, no age check."},
+  {t:"Intense (18+)",d:"Everything in Romantic, plus more grown-up, said out loud. Needs a licence, your age and two confirmations."}
+];
+const modes=[["🚗","Driving","Calls get a text · safe on the road"],["😴","Sleeping","Quiet night · a summary in the morning"],
+  ["🕌","Prayer","During namaz · automatic at prayer times"],["💼","Meeting","Busy at work · calls back after"],
+  ["📚","Focus","Study or deep work"],["🏋️","Workout","At the gym or exercising"],["🎮","Gaming","No interruptions while playing"]];
+
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  document.getElementById('s-'+id).scrollTop=0;}
+function openDrawer(){document.getElementById('drawer').classList.add('open')}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open')}
+function toggleRow(r){r.querySelector('.sw').classList.toggle('on')}
+function toggleAwake(){const p=document.getElementById('phone');p.classList.toggle('awake');
+  document.getElementById('homeStatus').textContent=p.classList.contains('awake')?'Faiza is awake and listening':'Faiza is asleep — tap the mic to wake her';}
+let tt;
+function toast(m){const t=document.getElementById('toast');t.textContent=m+' — phone-only feature';t.style.opacity=1;clearTimeout(tt);tt=setTimeout(()=>t.style.opacity=0,1600)}
+
+function renderLevels(){const box=document.getElementById('levels');box.innerHTML='';
+  levels.forEach((l,i)=>{const d=document.createElement('div');d.className='lvl'+(i===closeness?' sel':'');
+    d.innerHTML=`<div class="h">${l.t}${i===closeness?'<span style="color:var(--primaryLight)">✓</span>':''}</div><div class="d">${l.d}</div>`;
+    d.onclick=()=>{if(i===2){if(!confirm("Intense (18+): you confirm you are 18 or older?"))return;if(!confirm("Really turn on Intense (18+)? Google's own filter still applies."))return;}
+      closeness=i;renderLevels();document.getElementById('closenessSub').textContent='Girlfriend mode · '+l.t;toast2(l.t+' selected')};
+    box.appendChild(d)})}
+function toast2(m){const t=document.getElementById('toast');t.textContent=m;t.style.opacity=1;clearTimeout(tt);tt=setTimeout(()=>t.style.opacity=0,1400)}
+function renderSleep(){const s=document.getElementById('sleepSeg');s.innerHTML='';
+  [["Never",0],["5 min",5],["10 min",10],["20 min",20],["45 min",45]].forEach(([lab,v])=>{
+    const o=document.createElement('div');o.className='o'+(v===sleepMin?' on':'');o.textContent=lab;
+    o.onclick=()=>{sleepMin=v;renderSleep();document.getElementById('sleepSub').textContent=lab};s.appendChild(o)})}
+function renderModes(){const m=document.getElementById('modeList');m.innerHTML='';
+  modes.forEach(([e,t,s])=>{const r=document.createElement('div');r.className='row';
+    r.innerHTML=`<div class="tile" style="background:rgba(174,182,200,.15)">${e}</div><div class="rt"><div class="t">${t}</div><div class="s">${s}</div></div><div class="chev">›</div>`;
+    r.onclick=()=>toast2(t+' mode on (preview)');m.appendChild(r)})}
+
+const replies=["Of course! 💜","Done — want me to do anything else?","Hmm, in the phone app I'd actually open WhatsApp and do that for you.","I'm listening, jaan 😊","Right away! (This is the preview, so I can't touch the real phone here.)"];
+function openRoom(title,sub){go('chat');document.querySelector('#s-chat .title').textContent=title;
+  document.getElementById('msgs').innerHTML='';pushMsg('ai',sub+' — preview room. In the phone app this room answers with real AI.')}
+function pushMsg(cls,text){const d=document.createElement('div');d.className='msg '+cls;d.textContent=text;
+  const m=document.getElementById('msgs');m.appendChild(d);m.scrollTop=m.scrollHeight}
+function sendChat(){const i=document.getElementById('chatIn');const v=i.value.trim();if(!v)return;i.value='';
+  pushMsg('me',v);setTimeout(()=>pushMsg('ai',replies[Math.floor(Math.random()*replies.length)]),500)}
+function askFromHome(){const i=document.getElementById('homeAsk');const v=i.value.trim();if(!v)return;i.value='';go('chat');
+  pushMsg('me',v);setTimeout(()=>pushMsg('ai',replies[Math.floor(Math.random()*replies.length)]),500)}
+
+renderLevels();renderSleep();renderModes();
+</script>
+</body>
+</html>

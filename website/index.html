@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maya AI - Your Intelligent Phone Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --primary-light: #a78bfa;
+            --primary-dark: #5b21b6;
+            --accent: #06b6d4;
+            --accent-light: #67e8f9;
+            --bg-dark: #0a0a0f;
+            --bg-card: #111119;
+            --bg-card-hover: #1a1a2e;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --border: #1e1e2e;
+            --glow-purple: rgba(124, 58, 237, 0.3);
+            --glow-cyan: rgba(6, 182, 212, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* ====== ANIMATED BACKGROUND ====== */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-animation .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-animation .orb:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            top: -100px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-animation .orb:nth-child(2) {
+            width: 300px;
+            height: 300px;
+            background: var(--accent);
+            bottom: -50px;
+            left: -50px;
+            animation-delay: -7s;
+        }
+
+        .bg-animation .orb:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            background: #ec4899;
+            top: 50%;
+            left: 50%;
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -30px) scale(1.1); }
+            50% { transform: translate(-20px, 40px) scale(0.9); }
+            75% { transform: translate(30px, 20px) scale(1.05); }
+        }
+
+        /* ====== NAVBAR ====== */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 16px 0;
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 15, 0.8);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 20px var(--glow-purple);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px var(--glow-purple);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .btn-large {
+            padding: 14px 32px;
+            font-size: 16px;
+            border-radius: 14px;
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #0891b2);
+            color: white;
+            box-shadow: 0 4px 20px var(--glow-cyan);
+        }
+
+        /* ====== HERO ====== */
+        .hero {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 120px 24px 80px;
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 100px;
+            background: rgba(124, 58, 237, 0.15);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            font-size: 13px;
+            color: var(--primary-light);
+            margin-bottom: 20px;
+        }
+
+        .hero-badge .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--primary-light), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-bottom: 32px;
+            max-width: 500px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-light);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ====== FLOATING ORB PREVIEW ====== */
+        .orb-preview {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .phone-frame {
+            width: 280px;
+            height: 560px;
+            border-radius: 36px;
+            border: 3px solid var(--border);
+            background: #000;
+            padding: 12px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px var(--glow-purple);
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            border-radius: 24px;
+            background: linear-gradient(180deg, #0f0f1a 0%, #1a1025 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            width: 120px;
+            height: 28px;
+            background: #000;
+            border-radius: 0 0 16px 16px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .floating-orb {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--accent-light), var(--primary), var(--primary-dark));
+            animation: orb-float 4s ease-in-out infinite, orb-glow 2s ease-in-out infinite alternate;
+            position: relative;
+        }
+
+        .floating-orb::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--glow-purple), transparent 70%);
+            animation: orb-pulse 2s ease-in-out infinite;
+        }
+
+        .floating-orb::after {
+            content: '🤖';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+        }
+
+        @keyframes orb-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes orb-glow {
+            0% { box-shadow: 0 0 20px var(--glow-purple), 0 0 40px var(--glow-cyan); }
+            100% { box-shadow: 0 0 40px var(--glow-purple), 0 0 80px var(--glow-cyan); }
+        }
+
+        @keyframes orb-pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+
+        .orb-label {
+            position: absolute;
+            bottom: 80px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: var(--accent-light);
+            text-align: center;
+        }
+
+        .voice-wave {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+            position: absolute;
+            bottom: 50px;
+        }
+
+        .voice-wave span {
+            width: 3px;
+            background: var(--accent);
+            border-radius: 3px;
+            animation: wave 1s ease-in-out infinite;
+        }
+
+        .voice-wave span:nth-child(1) { height: 10px; animation-delay: 0s; }
+        .voice-wave span:nth-child(2) { height: 20px; animation-delay: 0.1s; }
+        .voice-wave span:nth-child(3) { height: 30px; animation-delay: 0.2s; }
+        .voice-wave span:nth-child(4) { height: 20px; animation-delay: 0.3s; }
+        .voice-wave span:nth-child(5) { height: 10px; animation-delay: 0.4s; }
+        .voice-wave span:nth-child(6) { height: 25px; animation-delay: 0.5s; }
+        .voice-wave span:nth-child(7) { height: 15px; animation-delay: 0.6s; }
+
+        @keyframes wave {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(2); }
+        }
+
+        /* ====== FEATURES ====== */
+        .section {
+            position: relative;
+            z-index: 1;
+            padding: 100px 24px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            background: var(--bg-card-hover);
+            transform: translateY(-4px);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+            background: rgba(124, 58, 237, 0.15);
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .badge-new {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-pro {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* ====== PRICING ====== */
+        .pricing-grid {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .price-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .price-card.popular {
+            border-color: var(--primary);
+            background: linear-gradient(180deg, rgba(124, 58, 237, 0.1) 0%, var(--bg-card) 100%);
+            transform: scale(1.05);
+        }
+
+        .price-card.popular::before {
+            content: '🔥 MOST POPULAR';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            padding: 4px 16px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .price-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .price-card.popular:hover {
+            transform: scale(1.05) translateY(-4px);
+        }
+
+        .price-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .price-card .price {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 40px;
+            font-weight: 800;
+            margin: 20px 0;
+        }
+
+        .price-card .price .currency {
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+
+        .price-card .price .period {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .price-features {
+            list-style: none;
+            text-align: left;
+            margin: 24px 0;
+        }
+
+        .price-features li {
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .price-features li .check {
+            color: var(--success);
+            font-size: 16px;
+        }
+
+        /* ====== HOW IT WORKS ====== */
+        .steps {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .step {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .step-content h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ====== FREE TRIAL BANNER ====== */
+        .trial-banner {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, var(--primary-dark), #1e1b4b);
+            border: 1px solid var(--primary);
+            border-radius: 24px;
+            padding: 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trial-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+            animation: spin 20s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .trial-banner h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .trial-banner p {
+            color: var(--text-muted);
+            font-size: 16px;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .trial-banner .btn {
+            position: relative;
+        }
+
+        /* ====== FOOTER ====== */
+        footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+            padding: 48px 24px;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-light);
+        }
+
+        .copyright {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        /* ====== LICENSE ACTIVATION MODAL ====== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 480px;
+            width: 90%;
+        }
+
+        .modal h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .modal p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-dark);
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--primary);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-buttons .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .result-box {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .result-box.success {
+            display: block;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success);
+        }
+
+        .result-box.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .license-key-display {
+            font-family: 'Orbitron', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-light);
+            background: var(--bg-dark);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px dashed var(--accent);
+            text-align: center;
+            margin: 12px 0;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .license-key-display:hover {
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        /* ====== RESPONSIVE ====== */
+        @media (max-width: 768px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .hero p {
+                margin: 0 auto 32px;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .hero-stats {
+                justify-content: center;
+            }
+
+            .features-grid, .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .price-card.popular {
+                transform: none;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .phone-frame {
+                width: 220px;
+                height: 440px;
+            }
+        }
+
+        /* ====== EXTRA FEATURE: MAYA NOT HAVING - FREE TRIAL BADGE ====== */
+        .extra-badge {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--success);
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="bg-animation">
+        <div class="orb"></div>
+        <div class="orb"></div>
+        <div class="orb"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <div class="logo-icon">🤖</div>
+                <span class="logo-text">MAYA AI</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#" class="btn btn-primary" onclick="openModal('activate')">Activate License</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="pulse"></span>
+                    Version 3.0 — Now Available
+                </div>
+                <h1>
+                    Your Phone,<br>
+                    <span class="gradient">Your AI Brain</span>
+                </h1>
+                <p>
+                    Maya AI controls your entire phone with just your voice.
+                    Make calls, send WhatsApp messages, automate tasks, and more —
+                    all hands-free with cutting-edge AI.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#pricing" class="btn btn-primary btn-large">
+                        ⬇️ Download Now
+                    </a>
+                    <a href="#" class="btn btn-outline btn-large" onclick="openModal('trial')">
+                        🎁 Free Trial (10 min)
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number">3</div>
+                        <div class="stat-label">AI Personas</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">15+</div>
+                        <div class="stat-label">Features</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">10</div>
+                        <div class="stat-label">Min Free Trial</div>
+                    </div>
+                </div>
+            </div>
+            <div class="orb-preview">
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="phone-notch"></div>
+                        <div class="floating-orb"></div>
+                        <div class="orb-label">✨ "Hey Maya..."</div>
+                        <div class="voice-wave">
+                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+        <div class="section-header">
+            <h2>Powerful <span class="gradient">Features</span></h2>
+            <p>Everything you need to control your phone with AI, and more.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📞</div>
+                <h3>Phone Control</h3>
+                <p>Make calls, answer calls, send SMS, control WhatsApp — all with your voice.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>Agentic System</h3>
+                <p>Maya launches multiple AI agents to complete complex multi-step tasks automatically.</p>
+                <span class="feature-badge badge-new">✨ NEW</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎭</div>
+                <h3>3 Personas</h3>
+                <p>Choose Maya, Friday, or Venom — each with unique voice and personality style.</p>
+                <span class="feature-badge badge-pro">PRO</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>Voice Guardian</h3>
+                <p>Only responds to YOUR voice. No one else can control your phone.</p>
+                <span class="feature-badge badge-pro">PRO</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔇</div>
+                <h3>Echo Guard</h3>
+                <p>Won't self-trigger when playing through speakers. Smart audio detection.</p>
+                <span class="feature-badge badge-new">✨ NEW</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Skills System</h3>
+                <p>Teach Maya new skills with simple MD files. Unlimited customization.</p>
+                <span class="feature-badge badge-pro">PRO</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3>Macros & Automation</h3>
+                <p>Record custom tasks and replay them. Set alarms, timers, and scheduled actions.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔌</div>
+                <h3>Multi-API Support</h3>
+                <p>Use Gemini, OpenAI, Claude, Groq, or OpenRouter as sub-agent providers.</p>
+                <span class="feature-badge badge-pro">PRO</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🆘</div>
+                <h3>SOS Mode</h3>
+                <p>Emergency? Auto-sends messages and calls your top 5 contacts instantly.</p>
+                <span class="feature-badge badge-pro">PRO</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👁️</div>
+                <h3>Screen Scan + Vision</h3>
+                <p>Maya can see your screen and camera to understand context and help better.</p>
+                <span class="feature-badge badge-pro">PRO</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>Bengali & Hindi Support</h3>
+                <p>Talk to Maya in Bengali, Hindi, or English. Fully multilingual experience.</p>
+                <span class="extra-badge">⭐ EXCLUSIVE</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎁</div>
+                <h3>Free Trial</h3>
+                <p>Try Maya for 10 minutes completely free. No credit card needed.</p>
+                <span class="extra-badge">⭐ EXCLUSIVE</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="section" id="pricing">
+        <div class="section-header">
+            <h2>Simple <span class="gradient">Pricing</span></h2>
+            <p>Choose the plan that works for you. Start with a free trial!</p>
+        </div>
+        <div class="pricing-grid">
+            <!-- Basic -->
+            <div class="price-card">
+                <h3>Basic</h3>
+                <p style="color: var(--text-muted); font-size: 14px;">For casual users</p>
+                <div class="price">
+                    <span class="currency">৳</span>299
+                    <span class="period">/month</span>
+                </div>
+                <ul class="price-features">
+                    <li><span class="check">✓</span> Voice Commands</li>
+                    <li><span class="check">✓</span> Phone Control (Call, SMS)</li>
+                    <li><span class="check">✓</span> App Launch</li>
+                    <li><span class="check">✓</span> Basic AI Chat</li>
+                    <li><span class="check">✓</span> 1 Persona (Maya)</li>
+                    <li><span class="check">✓</span> Floating Orb (2 designs)</li>
+                </ul>
+                <a href="#" class="btn btn-outline" style="width:100%;justify-content:center" onclick="openModal('buy', 'basic')">
+                    Choose Basic
+                </a>
+            </div>
+
+            <!-- Pro (Popular) -->
+            <div class="price-card popular">
+                <h3>Pro</h3>
+                <p style="color: var(--text-muted); font-size: 14px;">For power users</p>
+                <div class="price">
+                    <span class="currency">৳</span>499
+                    <span class="period">/month</span>
+                </div>
+                <ul class="price-features">
+                    <li><span class="check">✓</span> Everything in Basic</li>
+                    <li><span class="check">✓</span> 3 Personas</li>
+                    <li><span class="check">✓</span> Screen Scan + Vision</li>
+                    <li><span class="check">✓</span> Smart Automation</li>
+                    <li><span class="check">✓</span> Skills System</li>
+                    <li><span class="check">✓</span> Voice Guardian</li>
+                    <li><span class="check">✓</span> SOS Mode</li>
+                    <li><span class="check">✓</span> WhatsApp Integration</li>
+                    <li><span class="check">✓</span> 8 Orb Designs</li>
+                </ul>
+                <a href="#" class="btn btn-primary" style="width:100%;justify-content:center" onclick="openModal('buy', 'pro')">
+                    Choose Pro
+                </a>
+            </div>
+
+            <!-- Lifetime -->
+            <div class="price-card">
+                <h3>Lifetime</h3>
+                <p style="color: var(--text-muted); font-size: 14px;">One-time payment</p>
+                <div class="price">
+                    <span class="currency">৳</span>1999
+                    <span class="period">once</span>
+                </div>
+                <ul class="price-features">
+                    <li><span class="check">✓</span> Everything in Pro</li>
+                    <li><span class="check">✓</span> Lifetime Updates</li>
+                    <li><span class="check">✓</span> Early Access</li>
+                    <li><span class="check">✓</span> Custom Personas</li>
+                    <li><span class="check">✓</span> Unlimited Sub-Agents</li>
+                    <li><span class="check">✓</span> VIP Support</li>
+                    <li><span class="check">✓</span> Priority Bug Fixes</li>
+                </ul>
+                <a href="#" class="btn btn-accent" style="width:100%;justify-content:center" onclick="openModal('buy', 'lifetime')">
+                    Get Lifetime
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="section" id="how-it-works">
+        <div class="section-header">
+            <h2>How It <span class="gradient">Works</span></h2>
+            <p>Get started in 4 simple steps</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Download the APK</h3>
+                    <p>Download Maya AI from our website. Turn off Play Protect temporarily during installation (it's required for accessibility-based apps).</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Activate Your License</h3>
+                    <p>Enter your license key in the app. Or try the 10-minute free trial first — no registration needed!</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Grant Permissions</h3>
+                    <p>Allow accessibility, notification access, and other permissions. Each one is explained clearly in the app.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Say "Hey Maya!" 🎤</h3>
+                    <p>That's it! Maya is now listening. Control your entire phone with your voice. Make calls, send messages, automate everything.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Free Trial CTA -->
+    <section class="section">
+        <div class="trial-banner">
+            <h2>🎁 Try Maya AI — <span class="gradient">FREE</span></h2>
+            <p>10 minutes of full AI power. No payment. No registration. Just download and try.</p>
+            <a href="#" class="btn btn-accent btn-large" onclick="openModal('trial')">
+                Start Free Trial
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="#">Home</a>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Contact</a>
+        </div>
+        <p class="copyright">© 2026 Maya AI Assistant. All rights reserved.</p>
+    </footer>
+
+    <!-- License Activation Modal -->
+    <div class="modal-overlay" id="activateModal">
+        <div class="modal">
+            <h2>🔑 Activate License</h2>
+            <p>Enter your license key to activate Maya AI on your device.</p>
+            <div class="input-group">
+                <label>License Key</label>
+                <input type="text" id="licenseKeyInput" placeholder="MAYA-PRO-XXXX-XXXX-XXXX"
+                       style="text-transform: uppercase; font-family: 'Orbitron', monospace; letter-spacing: 1px;">
+            </div>
+            <div class="input-group">
+                <label>Email (used during purchase)</label>
+                <input type="email" id="emailInput" placeholder="your@email.com">
+            </div>
+            <div id="activateResult" class="result-box"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="verifyLicense()">Activate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buy Modal -->
+    <div class="modal-overlay" id="buyModal">
+        <div class="modal">
+            <h2>🛒 Purchase License</h2>
+            <p id="buyModalDesc">Get your Maya AI license key instantly.</p>
+            <div class="input-group">
+                <label>Your Name</label>
+                <input type="text" id="buyName" placeholder="Your full name">
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="buyEmail" placeholder="your@email.com">
+            </div>
+            <div class="input-group">
+                <label>Phone (optional)</label>
+                <input type="tel" id="buyPhone" placeholder="+880...">
+            </div>
+            <div class="input-group">
+                <label>Payment Method</label>
+                <select id="buyPayment">
+                    <option value="bkash">bKash</option>
+                    <option value="nagad">Nagad</option>
+                    <option value="rocket">Rocket</option>
+                    <option value="card">Credit/Debit Card</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Transaction ID</label>
+                <input type="text" id="buyTxnId" placeholder="Enter your payment transaction ID">
+            </div>
+            <div id="buyResult" class="result-box"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" id="buySubmitBtn" onclick="submitPurchase()">Submit Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPlan = 'basic';
+        // Your live server (same as the app's FAIZA_SERVER_URL). Localhost only while testing on the PC.
+        const API_BASE = (location.protocol.startsWith('http') && location.hostname !== 'localhost' && location.port !== '8777')
+            ? location.origin : 'http://localhost:5000';
+
+        function openModal(type, plan) {
+            closeModal();
+            if (type === 'activate' || type === 'trial') {
+                document.getElementById('activateModal').classList.add('active');
+            } else if (type === 'buy') {
+                currentPlan = plan || 'basic';
+                const prices = { basic: '৳299/month', pro: '৳499/month', lifetime: '৳1999 one-time' };
+                document.getElementById('buyModalDesc').textContent =
+                    `Get Maya AI ${plan.charAt(0).toUpperCase() + plan.slice(1)} — ${prices[plan]}`;
+                document.getElementById('buyModal').classList.add('active');
+            }
+        }
+
+        function closeModal() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+            document.querySelectorAll('.result-box').forEach(r => {
+                r.style.display = 'none';
+                r.className = 'result-box';
+            });
+        }
+
+        async function verifyLicense() {
+            const key = document.getElementById('licenseKeyInput').value.trim().toUpperCase();
+            const email = document.getElementById('emailInput').value.trim();
+            const resultBox = document.getElementById('activateResult');
+
+            if (!key) {
+                resultBox.className = 'result-box error';
+                resultBox.textContent = 'Please enter a license key.';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/license/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        license_key: key,
+                        device_id: 'web-check-' + Date.now()
+                    })
+                });
+                const data = await res.json();
+
+                if (data.valid) {
+                    resultBox.className = 'result-box success';
+                    resultBox.innerHTML = `
+                        ✅ License is <strong>VALID</strong>!<br>
+                        Plan: <strong>${data.plan_name}</strong><br>
+                        Expires: ${data.expires_at ? new Date(data.expires_at).toLocaleDateString() : 'Never'}
+                    `;
+                } else {
+                    resultBox.className = 'result-box error';
+                    resultBox.textContent = `❌ ${data.error}`;
+                }
+            } catch (err) {
+                resultBox.className = 'result-box error';
+                resultBox.textContent = '⚠️ Cannot connect to server. Make sure the backend is running.';
+            }
+        }
+
+        async function submitPurchase() {
+            const name = document.getElementById('buyName').value.trim();
+            const email = document.getElementById('buyEmail').value.trim();
+            const phone = document.getElementById('buyPhone').value.trim();
+            const payment = document.getElementById('buyPayment').value;
+            const txnId = document.getElementById('buyTxnId').value.trim();
+            const resultBox = document.getElementById('buyResult');
+
+            if (!name || !email || !txnId) {
+                resultBox.className = 'result-box error';
+                resultBox.textContent = 'Please fill in Name, Email, and Transaction ID.';
+                return;
+            }
+
+            const prices = { basic: 299, pro: 499, lifetime: 1999 };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        plan: currentPlan,
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        payment_method: payment,
+                        transaction_id: txnId
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('faizaOrder', JSON.stringify({ id: data.order_id, email }));
+                    resultBox.className = 'result-box success';
+                    resultBox.innerHTML = `
+                        ✅ অর্ডার পেয়েছি! অর্ডার নম্বর: <strong>${data.order_id}</strong><br>
+                        আমরা আপনার পেমেন্ট মিলিয়ে দেখে লাইসেন্স কী পাঠাব (সাধারণত ১–২ ঘণ্টা)।<br>
+                        <button class="btn" style="margin-top:10px" onclick="checkOrder()">🔄 স্ট্যাটাস দেখুন</button>
+                        <div id="orderStatus" style="margin-top:8px"></div>
+                    `;
+                } else {
+                    resultBox.className = 'result-box error';
+                    resultBox.textContent = `❌ ${data.error}`;
+                }
+            } catch (err) {
+                resultBox.className = 'result-box error';
+                resultBox.textContent = '⚠️ Cannot connect to server. Please try again later.';
+            }
+        }
+
+        /** The buyer comes back later: shows "waiting", the key, or why it was rejected. */
+        async function checkOrder() {
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem('faizaOrder') || 'null'); } catch (e) {}
+            const id = saved?.id || prompt('অর্ডার নম্বর:');
+            const email = saved?.email || prompt('যে ইমেইল দিয়েছিলেন:');
+            if (!id || !email) return;
+            const out = document.getElementById('orderStatus') || document.getElementById('buyResult');
+            try {
+                const res = await fetch(`${API_BASE}/api/order/${encodeURIComponent(id)}?email=${encodeURIComponent(email)}`);
+                const o = await res.json();
+                if (!res.ok) { out.textContent = '❌ ' + (o.error || 'Not found'); return; }
+                if (o.status === 'approved' && o.license_key) {
+                    out.innerHTML = `🎉 আপনার লাইসেন্স কী:<div class="license-key-display" onclick="copyKey('${o.license_key}')" title="Click to copy">${o.license_key}</div><small>📋 চাপ দিয়ে কপি করুন, অ্যাপে Settings → License-এ দিন।</small>`;
+                } else if (o.status === 'rejected') {
+                    out.textContent = '❌ পেমেন্ট পাওয়া যায়নি: ' + (o.note || '') + ' — সাপোর্টে যোগাযোগ করুন।';
+                } else {
+                    out.textContent = '⏳ এখনো যাচাই হচ্ছে, একটু পরে আবার দেখুন।';
+                }
+            } catch (err) { out.textContent = '⚠️ সার্ভারে যোগাযোগ করা যাচ্ছে না।'; }
+        }
+
+        function copyKey(key) {
+            navigator.clipboard.writeText(key).then(() => {
+                const el = document.querySelector('.license-key-display');
+                const original = el.textContent;
+                el.textContent = '✅ Copied!';
+                setTimeout(() => { el.textContent = original; }, 1500);
+            });
+        }
+
+        // Close modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeModal();
+            });
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href === '#') return;
+                e.preventDefault();
+                document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+</html>

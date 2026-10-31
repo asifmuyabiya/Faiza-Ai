@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Faiza Admin</title>
+<style>
+  :root { --bg:#0f1220; --card:#181c2e; --line:#2a3050; --text:#eef0fa; --muted:#9aa3c7; --ok:#3ccf91; --bad:#ff6b6b; --acc:#8b7cff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, "Noto Sans Bengali", sans-serif; }
+  main { max-width:980px; margin:0 auto; padding:16px; }
+  h1 { font-size:22px; margin:8px 0 4px; } .muted { color:var(--muted); font-size:13px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin:12px 0; }
+  input, select, button { font:inherit; border-radius:10px; border:1px solid var(--line); background:#0d1020; color:var(--text); padding:9px 12px; }
+  button { cursor:pointer; background:var(--acc); border-color:var(--acc); color:#fff; }
+  button.ghost { background:transparent; color:var(--text); } button.bad { background:var(--bad); border-color:var(--bad); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .order { border-top:1px solid var(--line); padding:12px 0; } .order:first-child { border-top:0; }
+  .key { font-family:ui-monospace,monospace; background:#0d1020; padding:6px 10px; border-radius:8px; display:inline-block; }
+  .pill { font-size:12px; padding:2px 8px; border-radius:99px; border:1px solid var(--line); }
+  .approved { color:var(--ok); } .rejected { color:var(--bad); }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; }
+  .stat b { display:block; font-size:22px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🔐 Faiza Admin</h1>
+  <div class="muted">অর্ডার দেখুন → bKash/Nagad অ্যাপে Transaction ID আর টাকা মিলিয়ে দেখুন → Approve করলে লাইসেন্স কী তৈরি হবে → ক্রেতাকে পাঠান।</div>
+
+  <div class="card row" id="login">
+    <input id="token" type="password" placeholder="ADMIN_TOKEN" style="flex:1;min-width:220px">
+    <button onclick="saveToken()">Login</button>
+  </div>
+
+  <div id="app" hidden>
+    <div class="card stats" id="stats"></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <b>🧾 অর্ডার</b>
+        <div class="row">
+          <select id="filter" onchange="load()"><option value="pending">Pending</option><option value="">All</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+          <button class="ghost" onclick="load()">↻</button>
+          <button class="ghost" onclick="logout()">Logout</button>
+        </div>
+      </div>
+      <div id="orders"></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>🐞 ক্রেতাদের অ্যাপে ক্র্যাশ</b><button class="ghost" onclick="crashes()">↻</button></div>
+      <div class="muted">একই সমস্যা কতবার, কতগুলো ফোনে হয়েছে। "দেখুন" চেপে পুরো রিপোর্ট কপি করে Claude-কে দিন, ঠিক করে দেবে।</div>
+      <div id="crashes"></div>
+    </div>
+    <div class="card">
+      <b>📦 নতুন আপডেট দিন</b>
+      <div class="muted">Claude নতুন APK বানালে এখানে আপলোড করুন — ক্রেতাদের অ্যাপে "আপডেট আছে" দেখাবে। Version code আগের চেয়ে বড় হতে হবে।</div>
+      <div class="row" style="margin-top:8px">
+        <input id="rcode" type="number" placeholder="Version code (যেমন 2)" style="width:170px">
+        <input id="rname" placeholder="Version name (যেমন 3.1.0)" style="width:170px">
+        <input id="rmin" type="number" placeholder="Min supported (ঐচ্ছিক)" style="width:170px">
+      </div>
+      <textarea id="rnotes" placeholder="কী নতুন (ক্রেতারা দেখবে)" style="width:100%;margin-top:8px;min-height:60px;border-radius:10px;background:#0d1020;color:var(--text);border:1px solid var(--line);padding:9px"></textarea>
+      <div class="row" style="margin-top:8px"><input id="rapk" type="file" accept=".apk"><button onclick="publish()">Publish</button></div>
+      <div id="rout" class="muted" style="margin-top:6px"></div>
+    </div>
+    <div class="card">
+      <b>🔑 নিজে কী বানান</b> <span class="muted">(ক্যাশে বিক্রি, গিফট ইত্যাদি)</span>
+      <div class="row" style="margin-top:8px">
+        <select id="mplan"><option>basic</option><option selected>pro</option><option>lifetime</option></select>
+        <input id="mqty" type="number" value="1" min="1" max="50" style="width:80px">
+        <input id="mname" placeholder="Customer name (optional)">
+        <button onclick="manual()">Generate</button>
+      </div>
+      <div id="mout" style="margin-top:8px"></div>
+    </div>
+  </div>
+</main>
+<script>
+const api = (p, opt = {}) => fetch(p, { ...opt, headers: { 'Content-Type': 'application/json', 'X-Admin-Token': sessionStorage.getItem('t') || '', ...(opt.headers || {}) } })
+  .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j; });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function saveToken() { sessionStorage.setItem('t', document.getElementById('token').value.trim()); start(); }
+function logout() { sessionStorage.removeItem('t'); location.reload(); }
+
+async function start() {
+  try { await stats(); document.getElementById('login').hidden = true; document.getElementById('app').hidden = false; load(); crashes(); }
+  catch (e) { alert('Login failed: ' + e.message); }
+}
+
+async function stats() {
+  const s = await api('/api/admin/stats');
+  const pend = await api('/api/admin/orders?status=pending');
+  const box = document.getElementById('stats');
+  const items = [['Pending orders', pend.orders.length]];
+  for (const [k, v] of Object.entries(s)) if (typeof v === 'number') items.push([k.replace(/_/g, ' '), v]);
+  box.innerHTML = items.slice(0, 8).map(([k, v]) => `<div class="stat"><b>${esc(v)}</b><span class="muted">${esc(k)}</span></div>`).join('');
+}
+
+function message(o) {
+  return `আসসালামু আলাইকুম ${o.name}, Faiza AI কেনার জন্য ধন্যবাদ! 🎉\nআপনার লাইসেন্স কী: ${o.license_key}\nঅ্যাপ খুলে Settings → License-এ কী-টা দিন।`;
+}
+
+async function load() {
+  const st = document.getElementById('filter').value;
+  const r = await api('/api/admin/orders' + (st ? '?status=' + st : ''));
+  const box = document.getElementById('orders');
+  if (!r.orders.length) { box.innerHTML = '<p class="muted">কোনো অর্ডার নেই।</p>'; return; }
+  box.innerHTML = r.orders.map(o => `
+    <div class="order">
+      <div class="row" style="justify-content:space-between">
+        <b>${esc(o.name)}</b>
+        <span class="pill ${esc(o.status)}">${esc(o.status)}</span>
+      </div>
+      <div class="muted">${esc(o.email)} · ${esc(o.phone)} · ${new Date(o.created_at).toLocaleString()}</div>
+      <div>প্ল্যান: <b>${esc(o.plan)}</b> · ৳${esc(o.payment_amount)} · ${esc(o.payment_method)} · TrxID: <span class="key">${esc(o.transaction_id)}</span></div>
+      ${o.status === 'pending' ? `<div class="row" style="margin-top:8px">
+          <button onclick="decide('${esc(o.id)}','approve')">✅ পেমেন্ট পেয়েছি — Approve</button>
+          <button class="bad" onclick="decide('${esc(o.id)}','reject')">✖ Reject</button></div>` : ''}
+      ${o.license_key ? `<div style="margin-top:8px">🔑 <span class="key">${esc(o.license_key)}</span>
+          <button class="ghost" onclick='copy(${JSON.stringify(message(o))})'>📋 মেসেজ কপি</button>
+          ${o.phone ? `<a class="pill" target="_blank" href="https://wa.me/${esc(o.phone.replace(/[^0-9]/g, '').replace(/^0/, '880'))}?text=${encodeURIComponent(message(o))}">WhatsApp</a>` : ''}</div>` : ''}
+      ${o.note ? `<div class="muted">Note: ${esc(o.note)}</div>` : ''}
+    </div>`).join('');
+}
+
+async function decide(id, what) {
+  if (what === 'approve' && !confirm('bKash/Nagad-এ এই TrxID আর টাকা মিলিয়ে দেখেছেন?')) return;
+  let body = {};
+  if (what === 'reject') body.note = prompt('কারণ (ক্রেতা দেখবে):', 'Payment not found') || 'Payment not found';
+  try { await api(`/api/admin/orders/${id}/${what}`, { method: 'POST', body: JSON.stringify(body) }); load(); stats(); }
+  catch (e) { alert(e.message); }
+}
+
+async function publish() {
+  const fd = new FormData();
+  fd.append('version_code', document.getElementById('rcode').value);
+  fd.append('version_name', document.getElementById('rname').value);
+  fd.append('min_supported', document.getElementById('rmin').value || '1');
+  fd.append('notes', document.getElementById('rnotes').value);
+  const file = document.getElementById('rapk').files[0];
+  if (file) fd.append('apk', file);
+  const out = document.getElementById('rout');
+  out.textContent = 'Uploading…';
+  try {
+    const r = await fetch('/api/admin/release', { method: 'POST', body: fd, headers: { 'X-Admin-Token': sessionStorage.getItem('t') || '' } });
+    const j = await r.json();
+    out.textContent = r.ok ? '✅ Published: ' + j.url : '❌ ' + j.error;
+  } catch (e) { out.textContent = '❌ ' + e.message; }
+}
+
+async function manual() {
+  try {
+    const r = await api('/api/admin/generate-license', { method: 'POST', body: JSON.stringify({
+      plan: document.getElementById('mplan').value, quantity: +document.getElementById('mqty').value || 1,
+      customer_name: document.getElementById('mname').value || undefined, payment_method: 'manual' }) });
+    document.getElementById('mout').innerHTML = r.license_keys.map(k => `<div class="key">${esc(k)}</div>`).join(' ');
+  } catch (e) { alert(e.message); }
+}
+
+async function crashes() {
+  const r = await api('/api/admin/crashes');
+  const box = document.getElementById('crashes');
+  if (!r.groups.length) { box.innerHTML = '<p class="muted">কোনো ক্র্যাশ নেই 🎉</p>'; return; }
+  box.innerHTML = r.groups.map(g => `<div class="order">
+      <div><b>${esc(g.count)}×</b> · ${esc(g.devices)} ফোন · v${esc(g.versions.join(', '))}</div>
+      <div class="key" style="white-space:normal">${esc(g.first_line)}</div>
+      <div class="muted">${esc(g.latest.model)} · Android API ${esc(g.latest.android)} · ${new Date(g.latest.created_at).toLocaleString()}
+        <button class="ghost" onclick="crashDetail(${g.latest.id})">দেখুন</button></div></div>`).join('');
+}
+
+async function crashDetail(id) {
+  const r = await api('/api/admin/crashes/' + id);
+  copy(r.report);
+}
+
+function copy(t) { navigator.clipboard.writeText(t).then(() => alert('কপি হয়েছে')); }
+if (sessionStorage.getItem('t')) start();
+</script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="40dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="28dp">
+
+        <!-- Logo orb -->
+        <FrameLayout
+            android:layout_width="120dp"
+            android:layout_height="120dp">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/orb_glow" />
+
+            <View
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="center"
+                android:background="@drawable/orb_core" />
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_wave"
+                app:tint="#FFFFFF" />
+        </FrameLayout>
+
+        <TextView
+            style="@style/Text.Faiza.Display"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Faiza AI" />
+
+        <TextView
+            style="@style/Text.Faiza.Caption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="Your voice assistant that runs your phone"
+            android:textSize="14sp" />
+
+        <!-- License card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:src="@drawable/ic_key" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Text.Faiza.Heading"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Activate license" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Unlocks all skills and personas" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/etLicenseKey"
+                    style="@style/Widget.Faiza.Input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:fontFamily="monospace"
+                    android:hint="FAIZA-PRO-XXXX-XXXX-XXXX"
+                    android:importantForAutofill="no"
+                    android:inputType="textCapCharacters|textNoSuggestions"
+                    android:maxLines="1"
+                    android:textSize="15sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnActivate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="Activate License" />
+
+                <TextView
+                    android:id="@+id/tvStatus"
+                    style="@style/Text.Faiza.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Divider -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/stroke" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:text="or"
+                android:textColor="@color/text_muted"
+                android:textSize="13sp" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/stroke" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFreeTrial"
+            style="@style/Widget.Faiza.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="Try free for 10 minutes"
+            app:icon="@drawable/ic_timer" />
+
+        <TextView
+            android:id="@+id/tvTrialInfo"
+            style="@style/Text.Faiza.Caption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:text="No payment needed · Chat only, skills unlock with a license" />
+
+        <TextView
+            android:id="@+id/tvBuyLicense"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:background="?attr/selectableItemBackground"
+            android:padding="10dp"
+            android:text="Don't have a license? Buy one"
+            android:textColor="@color/primary_light"
+            android:textSize="14sp" />
+
+        <!-- Shown only in test (debug) builds -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDevTest"
+            style="@style/Widget.Faiza.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Developer test (Pro) · test build only"
+            android:textColor="@color/text_muted"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</ScrollView>

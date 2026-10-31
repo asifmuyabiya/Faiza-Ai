@@ -1,0 +1,125 @@
+    // ---------------- Gaming mode ----------------
+
+    private var gameLoop: Job? = null
+    private var gameLeaveJob: Job? = null
+    @Volatile private var lastModelSpeechAt = 0L
+    @Volatile private var lastUserSpeechAt = 0L
+
+    /** Voice/switch "on": start now if a game is on screen, otherwise wait for one. */
+    fun requestGaming(): String {
+        val gm = com.faiza.ai.ai.game.GameMode
+        if (Build.VERSION.SDK_INT < 30) return "ERROR: gaming mode needs Android 11 or newer."
+        val a = FaizaAccessibilityService.instance
+            ?: return "ERROR: Accessibility Service is off — gaming mode needs it to see the screen. Ask the user to turn it on in Faiza settings."
+        val pkg = a.foregroundPackage
+        if (gm.isGame(this, pkg)) {
+            scope.launch { delay(700); startGaming(pkg) }
+            return "Starting gaming mode for ${gm.nameOf(this, pkg)} now. Say nothing more; the game commentary begins in a moment."
+        }
+        gm.armed = true
+        return "Gaming mode is ready and will start by itself as soon as the user opens a game. Tell them in one short sentence."
+    }
+
+    private fun startGaming(pkg: String) {
+        val gm = com.faiza.ai.ai.game.GameMode
+        if (FaizaAccessibilityService.instance == null || Build.VERSION.SDK_INT < 30) return
+        gm.begin(this, pkg)
+        restartGamingSession()
+        gameLoop?.cancel()
+        gameLoop = scope.launch { runGameLoop() }
+    }
+
+    /** New live session with the gaming prompt (talk level / jokes changed, or the mode just started). */
+    fun restartGamingSession() {
+        scope.launch {
+            if (live != null) { delay(1200); stopLive(endConversation = false); delay(400) }
+            if (prefs.canUseLive() && !micPaused) startLive(com.faiza.ai.ai.game.GameMode.startGreeting())
+        }
+    }
+
+    fun stopGaming(sayBye: Boolean) {
+        val gm = com.faiza.ai.ai.game.GameMode
+        val wasActive = gm.active.value
+        gm.end()
+        gameLoop?.cancel(); gameLoop = null
+        gameLeaveJob?.cancel(); gameLeaveJob = null
+        if (!wasActive) return
+        scope.launch {
+            if (sayBye) live?.sendText("[GAME END] The user left the game. In ONE short line say gaming mode is off and well played.")
+            delay(if (sayBye) 4500 else 3500)
+            sleepLive()
+        }
+    }
+
+    /** One look + one tip, without the mode. */
+    suspend fun gameGuideOnce(): String {
+        val a = FaizaAccessibilityService.instance ?: return "ERROR: Accessibility Service is off."
+        val s = live ?: return "No live voice chat — use look_at_screen to see the game instead."
+        if (!s.acceptsImages) return "This voice model can't see images; use look_at_screen instead."
+        val b64 = a.screenshotJpeg(maxSide = 960, quality = 60) ?: return "ERROR: couldn't capture the screen."
+        s.sendImage(android.util.Base64.decode(b64, android.util.Base64.NO_WRAP))
+        return "A picture of the user's game screen was just sent to you. Look at it and give ONE short, concrete tip " +
+                "(enemies, where to go, what to do next) in the user's language, like a coach."
+    }
+
+    private fun onForegroundForGaming(pkg: String) {
+        val gm = com.faiza.ai.ai.game.GameMode
+        if (pkg == packageName || pkg == "com.android.systemui" || pkg.isBlank()) return
+        if (gm.active.value) {
+            if (pkg == gm.gamePkg) { gameLeaveJob?.cancel(); gameLeaveJob = null; return }
+            if (!prefs.gamingAutoOff || gameLeaveJob != null) return
+            gameLeaveJob = scope.launch {
+                delay(8_000)
+                gameLeaveJob = null
+                if (FaizaAccessibilityService.instance?.foregroundPackage != gm.gamePkg) stopGaming(sayBye = true)
+            }
+            return
+        }
+        if (!prefs.gamingEnabled || !gm.isGame(this, pkg)) return
+        if (gm.armed || prefs.gamingAutoStart) { startGaming(pkg); return }
+        if (prefs.gamingAsk && gm.asked.add(pkg) && QuietMode.canSpeakUnprompted(this) && !OwnerGuard.needsCode()) {
+            val line = gm.offerLine(gm.nameOf(this, pkg))
+            val s = live
+            if (s != null) s.sendText(line) else if (prefs.canUseLive() && !micPaused) startLive(line)
+        }
+    }
+
+    /** About one screen picture a second, and a "your turn" nudge whenever she's been quiet for the talk level's gap. */
+    private suspend fun runGameLoop() {
+        val gm = com.faiza.ai.ai.game.GameMode
+        var lastFrame = 0L
+        var lastTick = SystemClock.elapsedRealtime()
+        var missing = 0
+        while (gm.active.value) {
+            lastUserActivityAt = System.currentTimeMillis() // playing isn't idle
+            val session = live
+            if (session == null) {
+                missing++
+                if (missing % 12 == 4 && prefs.canUseLive() && !micPaused) startLive(gm.startGreeting())
+                delay(500); continue
+            }
+            missing = 0
+            if (!session.isReady) { delay(300); continue }
+            if (!session.acceptsImages) {
+                session.sendText("[GAME END] Tell the user in one short sentence that this voice model can't see the screen, so gaming mode can't work with it.")
+                gm.end(); delay(4000); sleepLive(); return
+            }
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastFrame >= 1000) {
+                lastFrame = now
+                FaizaAccessibilityService.instance?.screenshotJpeg(maxSide = 960, quality = 55)?.let {
+                    session.sendImage(android.util.Base64.decode(it, android.util.Base64.NO_WRAP))
+                }
+            }
+            val talk = gm.talk
+            if (!gm.quiet && !session.isSpeaking &&
+                now - lastTick >= talk.tickMs &&
+                now - lastModelSpeechAt >= talk.tickMs * 2 / 3 &&
+                now - lastUserSpeechAt >= 4_000
+            ) {
+                lastTick = now
+                session.sendText(gm.TICK)
+            }
+            delay(250)
+        }
+    }

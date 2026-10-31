@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="28dp">
+
+        <LinearLayout style="@style/Widget.Faiza.TopBar">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                style="@style/Widget.Faiza.BackButton" />
+
+            <TextView
+                style="@style/Text.Faiza.Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Floating orb" />
+        </LinearLayout>
+
+        <!-- Live preview -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="210dp">
+
+                <com.faiza.ai.ui.orb.OrbView
+                    android:id="@+id/orbPreview"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center" />
+
+                <TextView
+                    android:id="@+id/tvPreviewState"
+                    style="@style/Text.Faiza.Caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="12dp"
+                    android:background="@drawable/bg_pill"
+                    android:paddingStart="12dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="3dp"
+                    android:text="Preview · Listening"
+                    android:textSize="12sp" />
+            </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Design" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/designList"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Color" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/themeList"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingBottom="4dp" />
+        </HorizontalScrollView>
+
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Size" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        style="@style/Widget.Faiza.RowTitle"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:text="Orb size" />
+
+                    <TextView
+                        android:id="@+id/tvOrbSize"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="100%"
+                        android:textColor="@color/primary_light"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderOrbSize"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:stepSize="5"
+                    android:value="100"
+                    android:valueFrom="60"
+                    android:valueTo="150"
+                    app:labelBehavior="gone"
+                    app:thumbColor="@color/primary_light"
+                    app:tickVisible="false"
+                    app:trackColorActive="@color/primary"
+                    app:trackColorInactive="@color/surface_2" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="On screen" />
+
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_violet"
+                        android:src="@drawable/ic_orb"
+                        app:tint="@color/tile_violet" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Show floating orb" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Tap to talk, drag to move" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchOrbEnabled"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <View style="@style/Widget.Faiza.Divider" />
+
+                <LinearLayout style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_slate"
+                        android:src="@drawable/ic_visibility_off"
+                        app:tint="@color/tile_slate" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Hide inside other apps" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Only on the home screen" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchOrbHide"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <View style="@style/Widget.Faiza.Divider" />
+
+                <LinearLayout style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_cyan"
+                        android:src="@drawable/ic_wave"
+                        app:tint="@color/tile_cyan" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Edge glow" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Glow around the screen while she's awake" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchEdgeGlow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <View style="@style/Widget.Faiza.Divider" />
+
+                <LinearLayout style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_pink"
+                        android:src="@drawable/ic_palette"
+                        app:tint="@color/tile_pink" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="RGB colours" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="All colours flow round the edge · off = theme colour" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchEdgeRgb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Typing and recording" />
+
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_blue"
+                        android:src="@drawable/ic_chat"
+                        app:tint="@color/tile_blue" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Realistic typing" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Types letter by letter" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchRealisticTyping"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <View style="@style/Widget.Faiza.Divider" />
+
+                <LinearLayout
+                    android:id="@+id/rowTypingSpeed"
+                    style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_cyan"
+                        android:src="@drawable/ic_timer"
+                        app:tint="@color/tile_cyan" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Typing speed" />
+
+                        <TextView
+                            android:id="@+id/subTypingSpeed"
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Normal" />
+                    </LinearLayout>
+
+                    <ImageView style="@style/Widget.Faiza.Chevron" />
+                </LinearLayout>
+
+                <View style="@style/Widget.Faiza.Divider" />
+
+                <LinearLayout
+                    android:id="@+id/rowTypingApps"
+                    style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_slate"
+                        android:src="@drawable/ic_smartphone"
+                        app:tint="@color/tile_slate" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Where to type like a person" />
+
+                        <TextView
+                            android:id="@+id/subTypingApps"
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Every app" />
+                    </LinearLayout>
+
+                    <ImageView style="@style/Widget.Faiza.Chevron" />
+                </LinearLayout>
+
+                <View style="@style/Widget.Faiza.Divider" />
+
+                <LinearLayout style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_red"
+                        android:src="@drawable/ic_camera"
+                        app:tint="@color/tile_red" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Screen recording mode" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="For recording your screen" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchScreenRecording"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Startup" />
+
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:background="@drawable/bg_tile_green"
+                        android:src="@drawable/ic_play"
+                        app:tint="@color/tile_green" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Start with your phone" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Wake word works after a restart" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchStartOnBoot"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+
+    </LinearLayout>
+</ScrollView>

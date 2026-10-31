@@ -1,0 +1,111 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'app.cash.paparazzi'
+}
+
+// Release signing: android/keystore.properties (keep it and keystore/ backed up — without them no update can be signed).
+def keystoreProps = new Properties()
+def keystoreFile = rootProject.file('keystore.properties')
+if (keystoreFile.exists()) keystoreFile.withInputStream { keystoreProps.load(it) }
+
+// The license server. Put the real address in android/gradle.properties: FAIZA_SERVER_URL=https://your-server
+def serverUrl = (project.findProperty('FAIZA_SERVER_URL') ?: 'https://CHANGE-ME.example.com').toString()
+
+android {
+    namespace 'com.faiza.ai'
+    compileSdk 34
+
+    signingConfigs {
+        release {
+            if (keystoreFile.exists()) {
+                storeFile rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
+    defaultConfig {
+        applicationId "com.faiza.ai"
+        minSdk 26
+        targetSdk 34
+        // Raise FAIZA_VERSION_CODE (android/gradle.properties) by 1 for every update you publish.
+        versionCode((project.findProperty('FAIZA_VERSION_CODE') ?: '1').toString().toInteger())
+        versionName((project.findProperty('FAIZA_VERSION_NAME') ?: '3.0.0').toString())
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Real phones are ARM; dropping x86/mips native libs keeps the APK small.
+        ndk {
+            // 64-bit only: every phone since ~2019 (Honor 200 Pro included). Dropping old 32-bit saves ~9 MB.
+            // For a very old 32-bit phone, add 'armeabi-v7a' back.
+            abiFilters 'arm64-v8a'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (keystoreFile.exists()) signingConfig signingConfigs.release
+            buildConfigField "String", "SERVER_URL", "\"${serverUrl}\""
+        }
+        debug {
+            minifyEnabled false
+            // 10.0.2.2 = this PC from the Android emulator.
+            buildConfigField "String", "SERVER_URL", "\"${project.findProperty('FAIZA_DEBUG_SERVER_URL') ?: 'http://10.0.2.2:5000'}\""
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+}
+
+dependencies {
+    // AndroidX Core
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+
+    // Networking (for license verification & AI API calls)
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Coroutines
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
+
+    // Offline wake word ("Hey Maya")
+    implementation 'com.alphacephei:vosk-android:0.3.75'
+    implementation 'net.java.dev.jna:jna:5.18.1@aar'
+
+    // Scan mode camera (video 30:51)
+    implementation 'androidx.camera:camera-camera2:1.3.4'
+    implementation 'androidx.camera:camera-lifecycle:1.3.4'
+    implementation 'androidx.camera:camera-view:1.3.4'
+
+    // SharedPreferences encrypted
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}

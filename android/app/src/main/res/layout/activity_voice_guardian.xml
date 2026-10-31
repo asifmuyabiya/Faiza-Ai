@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="28dp">
+
+        <LinearLayout style="@style/Widget.Faiza.TopBar">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                style="@style/Widget.Faiza.BackButton" />
+
+            <TextView
+                style="@style/Text.Faiza.Title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Voice Guardian" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Text.Faiza.Caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="Faiza learns your voice and won't obey anyone else. Everything stays on this phone." />
+
+        <TextView
+            android:id="@+id/tvVgStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_pill_warning"
+            android:paddingStart="14dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="10dp"
+            android:text="Preparing…"
+            android:textColor="@color/warning"
+            android:textSize="13sp" />
+
+        <!-- Settings -->
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Protection" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:src="@drawable/ic_shield" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Voice Guardian" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Only allowed voices can give commands" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchVgEnabled"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <View style="@style/Widget.Faiza.Divider" />
+
+                <LinearLayout
+                    android:id="@+id/rowVgMode"
+                    style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:src="@drawable/ic_person" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Who can talk to Faiza" />
+
+                        <TextView
+                            android:id="@+id/tvVgMode"
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="Only me" />
+                    </LinearLayout>
+
+                    <ImageView style="@style/Widget.Faiza.Chevron" />
+                </LinearLayout>
+
+                <View style="@style/Widget.Faiza.Divider" />
+
+                <LinearLayout style="@style/Widget.Faiza.Row">
+
+                    <ImageView
+                        style="@style/Widget.Faiza.IconTile"
+                        android:src="@drawable/ic_lock" />
+
+                    <LinearLayout style="@style/Widget.Faiza.RowText">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:text="Guard mode" />
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowSubtitle"
+                            android:text="A stranger gets one warning — the second time the phone locks" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchVgAway"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <View style="@style/Widget.Faiza.Divider" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/Widget.Faiza.RowTitle"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="Match limit" />
+
+                        <TextView
+                            android:id="@+id/tvVgThreshold"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="55%"
+                            android:textColor="@color/primary_light"
+                            android:textSize="15sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/sliderVgThreshold"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:stepSize="1"
+                        android:value="55"
+                        android:valueFrom="20"
+                        android:valueTo="95"
+                        app:labelBehavior="gone"
+                        app:tickVisible="false"
+                        app:thumbColor="@color/primary_light"
+                        app:trackColorActive="@color/primary"
+                        app:trackColorInactive="@color/surface_2" />
+
+                    <TextView
+                        style="@style/Text.Faiza.Caption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Tip: run &quot;Test my voice&quot; a few times and set this about 10% below your usual score."
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Voices -->
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Voices" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/voicesList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRecordOwner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Record my voice"
+            app:icon="@drawable/ic_mic" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddFamily"
+            style="@style/Widget.Faiza.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Add a family member"
+            app:icon="@drawable/ic_add" />
+
+        <!-- Test -->
+        <TextView
+            style="@style/Text.Faiza.Section"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Test" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTestVoice"
+            style="@style/Widget.Faiza.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test my voice"
+            app:icon="@drawable/ic_wave" />
+
+        <TextView
+            android:id="@+id/tvTestResult"
+            style="@style/Text.Faiza.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</ScrollView>
