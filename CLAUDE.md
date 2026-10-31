@@ -38,3 +38,12 @@ change that installs **over the existing app** (no uninstall, data kept).
 `ai/code/CodeAgent.kt` emits written files on `CodeAgent.typing`; `ui/windows/CodeWindow.kt` (💻, `WindowKind.CODE`)
 floats over any app, types the code out (`CodeTyping.charsPerTick`) and scrolls up like a terminal. Opens
 automatically when a Code Studio job starts (`prefs.codeLiveWindow`, default on).
+
+## Reading the screen & typing (v7)
+
+- `FaizaAccessibilityService.appRoot()` leaves out the orb / mini windows by **window type** (overlays are system
+  windows), **not** by Faiza's package. Her own screens (Code Studio prompt box, Chat, Settings) must stay readable and
+  typeable — the old package filter made her say "this isn't a text box".
+- Text fields = `TextFieldRules.isTextField` (editable flag, EditText-like class, or accepts SET_TEXT). `read_screen`
+  marks them `✏️ TEXT BOX` with "empty — hint: …" / "contains: …"; `type_text` takes `number` or `field` to pick a box
+  and falls back to select-all + paste when SET_TEXT is refused.

@@ -126,14 +126,27 @@ class FaizaAccessibilityService : AccessibilityService() {
 
     // ========== Reading the screen ==========
 
-    /** The app window the user is looking at (not our floating orb, not the keyboard). */
+    /**
+     * The app window the user is looking at — INCLUDING Faiza's own screens (Code Studio, Chat, Settings…). Our orb and
+     * floating mini windows are overlays (system windows), so they are left out by window TYPE, not by package: the
+     * old "skip our package" rule made her blind on her own screens ("এটা টেক্সট বক্স না, আমি লিখতে পারি না").
+     */
     private fun appRoot(): AccessibilityNodeInfo? {
-        rootInActiveWindow?.let { if (it.packageName?.toString() != packageName) return it }
-        return windows
-            .filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }
-            .mapNotNull { it.root }
-            .firstOrNull { it.packageName?.toString() != packageName }
+        val apps = runCatching { windows.filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION } }.getOrDefault(emptyList())
+        apps.firstOrNull { it.isActive || it.isFocused }?.root?.let { return it }
+        rootInActiveWindow?.let { r ->
+            // Another app's window, or one of our own app windows — but never one of our overlays.
+            if (r.packageName?.toString() != packageName || apps.any { it.id == r.windowId }) return r
+        }
+        return apps.mapNotNull { it.root }.firstOrNull()
     }
+
+    /** Can text be written into this node? (Also custom / WebView fields that don't say "editable".) */
+    private fun isTextField(node: AccessibilityNodeInfo): Boolean = TextFieldRules.isTextField(
+        node.className?.toString(),
+        node.isEditable,
+        runCatching { node.actionList.any { it.id == AccessibilityNodeInfo.ACTION_SET_TEXT } }.getOrDefault(false)
+    )
 
     /** Numbered list of visible elements; numbers stay valid until the next call. */
     fun snapshot(): List<ScreenElement> {
@@ -158,14 +171,24 @@ class FaizaAccessibilityService : AccessibilityService() {
         val desc = node.contentDescription?.toString()?.trim().orEmpty()
         val hint = if (Build.VERSION.SDK_INT >= 26) node.hintText?.toString()?.trim().orEmpty() else ""
         val clickable = node.isClickable || node.isLongClickable
-        val editable = node.isEditable
+        val editable = isTextField(node)
         val scrollable = node.isScrollable
 
-        var label = when {
+        var label = if (editable) {
+            // Say clearly what's in the box: its text, or that it's empty (and what the grey hint says).
+            val typed = if (text.isNotEmpty() && text != hint) text else ""
+            val name = desc.ifEmpty { node.viewIdResourceName?.substringAfterLast('/')?.replace('_', ' ').orEmpty() }
+            buildString {
+                if (typed.isNotEmpty()) append("contains: \"").append(typed.take(80)).append('"')
+                else append("empty")
+                if (hint.isNotEmpty()) append(" — hint: \"").append(hint.take(80)).append('"')
+                else if (typed.isEmpty() && text.isNotEmpty()) append(" — hint: \"").append(text.take(80)).append('"')
+                if (name.isNotEmpty()) append(" — ").append(name)
+            }
+        } else when {
             text.isNotEmpty() && desc.isNotEmpty() && desc != text -> "$text ($desc)"
             text.isNotEmpty() -> text
             desc.isNotEmpty() -> desc
-            editable && hint.isNotEmpty() -> hint
             else -> ""
         }
         // A clickable container with no label of its own (e.g. a chat row): borrow its children's text.
@@ -209,7 +232,7 @@ class FaizaAccessibilityService : AccessibilityService() {
     private fun roleOf(node: AccessibilityNodeInfo, editable: Boolean, scrollable: Boolean): String {
         val cls = node.className?.toString()?.substringAfterLast('.').orEmpty()
         return when {
-            editable -> "text box"
+            editable -> "✏️ TEXT BOX (you can type here: type_text number=N)"
             cls.contains("Button") -> "button"
             cls.contains("Image") && node.isClickable -> "icon button"
             cls.contains("CheckBox") || cls.contains("Switch") -> if (node.isChecked) "switch ON" else "switch OFF"
@@ -236,6 +259,10 @@ class FaizaAccessibilityService : AccessibilityService() {
                 append(" @").append(e.bounds.centerX()).append(',').append(e.bounds.centerY())
                 appendLine()
             }
+            if (elements.any { it.editable }) appendLine(
+                "Every ✏️ TEXT BOX can be typed into — in any app, including Faiza's own screens (Code Studio prompt, " +
+                        "chat box, settings). Use type_text with its number."
+            )
         }.take(7000)
     }
 
@@ -437,13 +464,21 @@ class FaizaAccessibilityService : AccessibilityService() {
 
     // ========== Typing ==========
 
-    /** The text box to type into: the focused one, or the first on screen (tapping it first). */
-    private suspend fun typingField(): AccessibilityNodeInfo? {
-        appRoot()?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.takeIf { it.isEditable }?.let { return it }
-        val box = snapshot().firstOrNull { it.editable } ?: return null
+    /**
+     * The text box to type into: [target] if given (tapped first so it gets the cursor), else the focused one, else the
+     * first on screen.
+     */
+    private suspend fun typingField(target: ScreenElement? = null): AccessibilityNodeInfo? {
+        if (target == null) {
+            appRoot()?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.takeIf { isTextField(it) }?.let { return it }
+        }
+        val box = target ?: snapshot().firstOrNull { it.editable } ?: return null
         tapElement(box)
         delay(400)
-        return appRoot()?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.takeIf { it.isEditable } ?: nodeAt(box)
+        val focused = appRoot()?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.takeIf { isTextField(it) }
+        // With a chosen box, trust the focus only if it really is that box.
+        if (focused != null && (target == null || Rect().also { focused.getBoundsInScreen(it) }.intersect(target.bounds))) return focused
+        return nodeAt(box) ?: focused
     }
 
     /** Text in the message / text box on screen now (hint ignored), or null when there is no box. */
@@ -452,7 +487,7 @@ class FaizaAccessibilityService : AccessibilityService() {
         var found: AccessibilityNodeInfo? = null
         fun walk(n: AccessibilityNodeInfo, d: Int) {
             if (d > 40 || found != null) return
-            if (n.isEditable && n.isVisibleToUser) { found = n; return }
+            if (isTextField(n) && n.isVisibleToUser) { found = n; return }
             for (i in 0 until n.childCount) n.getChild(i)?.let { walk(it, d + 1) }
         }
         walk(root, 0)
@@ -469,8 +504,22 @@ class FaizaAccessibilityService : AccessibilityService() {
         val args = Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value)
         }
-        return field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        if (field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) return true
+        return pasteInto(field, value)
     }
+
+    /** Fallback for boxes that refuse SET_TEXT (some web pages, custom apps): select all, then paste. */
+    private fun pasteInto(field: AccessibilityNodeInfo, value: String): Boolean = runCatching {
+        val cm = getSystemService(android.content.ClipboardManager::class.java) ?: return false
+        cm.setPrimaryClip(android.content.ClipData.newPlainText("Faiza", value))
+        field.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        val len = field.text?.length ?: 0
+        if (len > 0) field.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, Bundle().apply {
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 0)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, len)
+        })
+        field.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+    }.getOrDefault(false)
 
     /** Realistic typing is on, and this app is one of the chosen ones (or none are chosen). */
     fun typeLikePerson(): Boolean {
@@ -481,15 +530,15 @@ class FaizaAccessibilityService : AccessibilityService() {
     }
 
     /** Types all of [text] at once. */
-    suspend fun typeText(text: String, append: Boolean = false): Boolean {
-        val field = typingField() ?: return false
+    suspend fun typeText(text: String, append: Boolean = false, target: ScreenElement? = null): Boolean {
+        val field = typingField(target) ?: return false
         val current = currentText(field)
         return setFieldText(field, if (append && current.isNotEmpty()) current + text else text)
     }
 
     /** Types like a person, one character at a time (video 29:11). Never takes longer than about 12 seconds. */
-    suspend fun typeTextHuman(text: String, append: Boolean = false): Boolean {
-        var field = typingField() ?: return false
+    suspend fun typeTextHuman(text: String, append: Boolean = false, target: ScreenElement? = null): Boolean {
+        var field = typingField(target) ?: return false
         val points = text.codePoints().toArray()
         val sb = StringBuilder(if (append) currentText(field) else "")
         if (points.isEmpty()) return setFieldText(field, sb.toString())
@@ -505,7 +554,7 @@ class FaizaAccessibilityService : AccessibilityService() {
             field.refresh()
             if (!setFieldText(field, sb.toString())) {
                 // The screen may have changed under us: find the box once more.
-                field = typingField() ?: return false
+                field = typingField(target) ?: return false
                 if (!setFieldText(field, sb.toString())) return false
             }
             delay(perChar + Random.nextLong(0, perChar / 2 + 1))

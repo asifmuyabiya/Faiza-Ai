@@ -232,19 +232,32 @@ object BuiltInSkills {
         },
 
         Skill(
-            "type_text", "⌨️", "Type text", "Types into the text box",
-            "Type text into the selected text box (or the first text box on screen). Set submit=true to press " +
-                    "Enter/Search/Send afterwards.",
+            "type_text", "⌨️", "Type text", "Types into any text box",
+            "Write text into ANY text box on screen, in any app — including Faiza's own screens (the Code Studio " +
+                    "prompt box, the chat box, settings fields), search bars, chat apps and web pages. Every ✏️ TEXT BOX " +
+                    "in read_screen can be written into: never tell the user a box can't be typed into — call read_screen, " +
+                    "pick the box and pass its number. Without number/field it uses the focused box or the first one. " +
+                    "For a prompt the user wants (e.g. a website idea in Code Studio) write the full, detailed text. " +
+                    "Set submit=true to press Enter/Search/Send afterwards.",
             listOf(
                 ToolParam("text", ParamType.STRING, "Text to type"),
+                ToolParam("number", ParamType.INTEGER, "Number of the ✏️ TEXT BOX from read_screen", required = false),
+                ToolParam("field", ParamType.STRING, "Or: words from the box's hint/label, e.g. \"search\", \"message\"", required = false),
                 ToolParam("submit", ParamType.BOOLEAN, "Press Enter/Search after typing", required = false)
             ),
             needsAccessibility = true
         ) { _, args ->
             val a = accessibility()
             val text = args.require("text")
-            val typed = if (a.typeLikePerson()) a.typeTextHuman(text) else a.typeText(text)
-            if (!typed) return@Skill "ERROR: no text box on screen"
+            val target = args.int("number")?.let { n ->
+                a.elementByNumber(n) ?: return@Skill "ERROR: no element [$n]. Call read_screen again, then type_text with the ✏️ TEXT BOX number."
+            } ?: args.str("field")?.takeIf { it.isNotBlank() }?.let { f -> a.findBest(f) { it.editable } }
+            if (target != null && !target.editable) {
+                return@Skill "ERROR: [${target.number}] ${target.label} is not a text box. Call read_screen and pick a ✏️ TEXT BOX."
+            }
+            val typed = if (a.typeLikePerson()) a.typeTextHuman(text, target = target) else a.typeText(text, target = target)
+            if (!typed) return@Skill "ERROR: couldn't write there. Call read_screen, then type_text with the ✏️ TEXT BOX number " +
+                    "(if none is listed, tap where the user wants to write first, then try again)."
             delay(300)
             if (args.bool("submit")) {
                 if (!a.pressEnter()) return@Skill "OK: typed, but couldn't press Enter — tap the send/search button instead"
