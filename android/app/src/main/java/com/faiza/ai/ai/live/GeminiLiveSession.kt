@@ -146,6 +146,7 @@ class GeminiLiveSession(
         private const val OUTPUT_WORDS_MS = 20_000L    // her recent words, to recognise her own echo
         private const val OUT_SEG_BYTES = 2_400        // 50 ms of 24 kHz PCM16 per output level sample
         private const val ECHO_LOOKBACK_MS = 450L      // playback-to-mic latency window
+        private const val STOP_HOLD_MS = 8_000L        // after "থামো", never auto-resume the old answer
 
         private val http = OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS)
@@ -539,14 +540,16 @@ class GeminiLiveSession(
             turnStarted = false
             muteThisTurn = false
             // Stopped by her OWN voice from the speaker (not the user)? Wait for the transcript, then let her go on.
-            if (!muteMicWhileSpeaking && echoResumes < 3) scope.launch {
+            if (!muteMicWhileSpeaking && echoResumes < 3 && !recentlyStoppedByUser()) scope.launch {
                 val interruptedAt = SystemClock.elapsedRealtime()
                 delay(if (loudDuplex) 1600 else 900)
                 val heard = synchronized(overTalkText) { EchoText.words(overTalkText.toString()) }
                 val spoken = synchronized(recentOutputWords) { recentOutputWords.mapTo(HashSet()) { it.word } }
                 val userSaidSomething = lastInputAt > interruptedAt - 1_500 && !EchoText.isEchoTurn(heard, spoken)
                 val echo = EchoText.isEchoTurn(heard, spoken) || (loudDuplex && !userSaidSomething && heard.isEmpty())
-                if (echo && !isSpeaking && !stopped) {
+                // A stop word (even one transcribed late) means the user really stopped her: don't carry on.
+                val told = recentlyStoppedByUser() || EchoText.isStopCommand(heard, spoken)
+                if (echo && !told && !isSpeaking && !stopped) {
                     echoResumes++
                     synchronized(heardSinceTurn) { heardSinceTurn.setLength(0) }
                     sendText("[ECHO] That sound was only your own voice from the loudspeaker, not the user. Continue your " +
@@ -583,7 +586,11 @@ class GeminiLiveSession(
             EchoText.words(overTalkText.toString())
         }
         val spoken = synchronized(recentOutputWords) { recentOutputWords.mapTo(HashSet()) { it.word } }
-        if (EchoText.isUserSpeech(heard, spoken)) {
+        if (bargeIn && EchoText.isStopCommand(heard, spoken)) {
+            // "থামো / stop / wait": stop for sure — on the phone AND on the server — and never auto-continue.
+            synchronized(overTalkText) { overTalkText.setLength(0) }
+            stopByUser()
+        } else if (EchoText.isUserSpeech(heard, spoken)) {
             synchronized(overTalkText) { overTalkText.setLength(0) }
             silenceForBargeIn()
         } else if (heard.size >= 3 && EchoText.echoShare(heard, spoken) >= 0.8) {
@@ -827,6 +834,19 @@ class GeminiLiveSession(
             spotter?.close()
             spotter = null
         }
+    }
+
+    /** When the user last told her to stop (a stop word): no "it was only echo, go on" for a while after this. */
+    @Volatile private var userStoppedAt = 0L
+
+    private fun recentlyStoppedByUser(): Boolean =
+        userStoppedAt > 0L && SystemClock.elapsedRealtime() - userStoppedAt < STOP_HOLD_MS
+
+    /** The user said a stop word: cut her off now, cancel the answer on the server, and listen. */
+    private fun stopByUser() {
+        userStoppedAt = SystemClock.elapsedRealtime()
+        silenceForBargeIn()
+        main.post { userInterrupt() }
     }
 
     /** User interrupted: silence Faiza at once and drop the rest of the turn she was speaking. */

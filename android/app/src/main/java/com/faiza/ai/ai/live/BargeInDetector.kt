@@ -165,4 +165,27 @@ object EchoText {
         val letters = heard.sumOf { it.length }
         return heard.isNotEmpty() && letters >= 3 && echoShare(heard, recentOutput) < 0.5
     }
+
+    /** Bangla stop stems, matched inside a word ("থামো", "থামেন", "থামুন", "চুপ কর", "দাঁড়াও", "স্টপ", "ওয়েট"…). */
+    private val STOP_STEMS = listOf("থাম", "চুপ", "দাঁড়া", "দাড়া", "স্টপ", "ওয়েট", "ওয়েট", "ওয়েইট")
+        .map { nfc(it) }
+
+    /** Whole words in English / Banglish. */
+    private val STOP_WORDS = setOf("stop", "wait", "enough", "shut", "thamo", "thamen", "thamun", "tham", "chup", "ruko")
+
+    private fun nfc(s: String) = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFC)
+
+    private fun isStopWord(word: String): Boolean {
+        val w = nfc(word)
+        return w in STOP_WORDS || STOP_STEMS.any { w.contains(it) }
+    }
+
+    /**
+     * Owner: "থামো থামো, এটা না" — a stop word in the mic transcript that Faiza did not just say herself.
+     * Her own recent words are excluded, so reading out a text that contains "থামো" can't stop her.
+     */
+    fun isStopCommand(heard: List<String>, recentOutput: Set<String>): Boolean {
+        val her = recentOutput.mapTo(HashSet()) { nfc(it) }
+        return heard.any { isStopWord(it) && nfc(it) !in her }
+    }
 }
