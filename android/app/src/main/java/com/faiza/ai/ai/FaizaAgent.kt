@@ -303,8 +303,8 @@ class FaizaAgent(
         params = listOf(ToolParam("question", ParamType.STRING, "What to look for or answer about the screen")),
         needsAccessibility = true
     ) { _, args ->
-        val a = FaizaAccessibilityService.instance
-            ?: throw SkillException("Accessibility Service is off. Ask the user to enable it in Faiza AI settings.")
+        val a = com.faiza.ai.service.A11yStatus.awaitService(context)
+            ?: throw SkillException(com.faiza.ai.service.A11yStatus.errorText(context))
         val image = a.screenshotJpeg()
             ?: return@Skill "ERROR: couldn't take a screenshot (needs Android 11+). Use read_screen instead."
         val metrics = context.resources.displayMetrics

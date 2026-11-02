@@ -82,7 +82,20 @@ class FaizaAccessibilityService : AccessibilityService() {
         instance = this
     }
 
+    /** A crash in here makes Android stop the service while the switch stays ON — never let one escape. */
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        try {
+            handleEvent(event)
+        } catch (_: Throwable) {
+        }
+    }
+
+    override fun onUnbind(intent: android.content.Intent?): Boolean {
+        if (instance === this) instance = null
+        return super.onUnbind(intent)
+    }
+
+    private fun handleEvent(event: AccessibilityEvent?) {
         if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val pkg = event.packageName?.toString().orEmpty()
             if (pkg.isNotEmpty() && !pkg.contains("inputmethod") && pkg != "com.android.systemui") {
@@ -107,7 +120,10 @@ class FaizaAccessibilityService : AccessibilityService() {
     private val headset = com.faiza.ai.assist.HeadsetDoublePress()
 
     /** Earphone button pressed twice quickly → Faiza listens (the first press still plays/pauses music). */
-    override fun onKeyEvent(event: android.view.KeyEvent): Boolean {
+    override fun onKeyEvent(event: android.view.KeyEvent): Boolean =
+        try { handleKey(event) } catch (_: Throwable) { false }
+
+    private fun handleKey(event: android.view.KeyEvent): Boolean {
         // Volume-down while Faiza is talking = "stop and listen" (the volume still changes as usual).
         if (event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN && event.action == android.view.KeyEvent.ACTION_DOWN) {
             handler.post { com.faiza.ai.service.FloatingOrbService.instance?.interruptIfSpeaking() }
@@ -138,7 +154,10 @@ class FaizaAccessibilityService : AccessibilityService() {
             // Another app's window, or one of our own app windows — but never one of our overlays.
             if (r.packageName?.toString() != packageName || apps.any { it.id == r.windowId }) return r
         }
-        return apps.mapNotNull { it.root }.firstOrNull()
+        apps.mapNotNull { it.root }.firstOrNull()?.let { return it }
+        // Last resort: any non-overlay window we can read (never return nothing while something is on screen).
+        return runCatching { windows.mapNotNull { it.root }.firstOrNull { it.packageName?.toString() != packageName } }.getOrNull()
+            ?: rootInActiveWindow
     }
 
     /** Can text be written into this node? (Also custom / WebView fields that don't say "editable".) */

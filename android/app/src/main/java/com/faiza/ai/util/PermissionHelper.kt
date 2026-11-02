@@ -161,9 +161,12 @@ class PermissionHelper(private val context: Context) {
             PermissionItem(
                 id = "accessibility",
                 name = "Accessibility Service",
-                description = "Core permission that lets Faiza AI control your phone — tap buttons, read screens, type text, and navigate apps.",
+                description = if (isAccessibilityServiceEnabled() && com.faiza.ai.service.FaizaAccessibilityService.instance == null)
+                    "চালু আছে, কিন্তু Android সার্ভিসটা বন্ধ করে দিয়েছে (আপডেটের পর এমন হয়)। Faiza AI-এর সুইচ একবার বন্ধ করে আবার চালু করুন।"
+                else "Core permission that lets Faiza AI control your phone — tap buttons, read screens, type text, and navigate apps.",
                 icon = "♿",
-                isGranted = { isAccessibilityServiceEnabled() },
+                // Granted only when the service really runs: Android can keep the switch ON after stopping it.
+                isGranted = { isAccessibilityServiceEnabled() && com.faiza.ai.service.FaizaAccessibilityService.instance != null },
                 request = { activity ->
                     val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                     activity.startActivity(intent)

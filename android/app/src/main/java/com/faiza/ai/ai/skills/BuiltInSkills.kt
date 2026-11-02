@@ -400,9 +400,10 @@ object BuiltInSkills {
 
     // ====== Implementations ======
 
-    private fun accessibility(): FaizaAccessibilityService =
-        FaizaAccessibilityService.instance
-            ?: throw SkillException("Accessibility Service is off. Ask the user to enable it in Faiza AI → Settings → Permissions.")
+    /** The running screen service; if it's off — or ON but stopped by Android — say exactly how to fix it. */
+    private suspend fun accessibility(): FaizaAccessibilityService =
+        com.faiza.ai.service.A11yStatus.awaitService(FaizaApp.instance)
+            ?: throw SkillException(com.faiza.ai.service.A11yStatus.errorText(FaizaApp.instance))
 
     private fun launch(ctx: Context, intent: Intent) {
         ctx.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -797,7 +798,7 @@ object BuiltInSkills {
         }
     }
 
-    private fun phoneControl(action: String): String {
+    private suspend fun phoneControl(action: String): String {
         val a = accessibility()
         val ok = when (action) {
             "home" -> a.pressHome()

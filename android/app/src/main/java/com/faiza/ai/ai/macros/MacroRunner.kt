@@ -169,8 +169,8 @@ object MacroRunner {
         return "OK: macro “${macro.name}” finished (${macro.steps.size} steps)."
     }
 
-    private fun accessibility() = FaizaAccessibilityService.instance
-        ?: throw SkillException("Accessibility turned off")
+    private suspend fun accessibility() = com.faiza.ai.service.A11yStatus.awaitService(com.faiza.ai.FaizaApp.instance)
+        ?: throw SkillException(com.faiza.ai.service.A11yStatus.errorText(com.faiza.ai.FaizaApp.instance))
 
     /** Labels to try: the full one, then shorter forms (chat rows include times/last messages that change). */
     private fun candidates(target: String): List<String> {

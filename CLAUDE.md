@@ -47,3 +47,11 @@ automatically when a Code Studio job starts (`prefs.codeLiveWindow`, default on)
 - Text fields = `TextFieldRules.isTextField` (editable flag, EditText-like class, or accepts SET_TEXT). `read_screen`
   marks them `✏️ TEXT BOX` with "empty — hint: …" / "contains: …"; `type_text` takes `number` or `field` to pick a box
   and falls back to select-all + paste when SET_TEXT is refused.
+
+## Accessibility ON but not running (v8)
+
+Android can keep the Accessibility switch ON after stopping the service (app update, battery saving, crash). Tools
+must use `A11yStatus.awaitService()` / `A11yStatus.errorText()` (`service/A11yStatus.kt`), never
+`FaizaAccessibilityService.instance` alone with a "turn it on" message: in the ON-but-stopped state the fix is to switch
+Faiza AI OFF and ON again in Settings → Accessibility. The Permissions screen shows granted only when it really runs.
+`onAccessibilityEvent` / `onKeyEvent` are wrapped in try/catch so a crash can't stop the service.

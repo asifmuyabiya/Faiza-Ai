@@ -500,7 +500,7 @@ class FloatingOrbService : Service(), TextToSpeech.OnInitListener {
         val gm = com.faiza.ai.ai.game.GameMode
         if (Build.VERSION.SDK_INT < 30) return "ERROR: gaming mode needs Android 11 or newer."
         val a = FaizaAccessibilityService.instance
-            ?: return "ERROR: Accessibility Service is off — gaming mode needs it to see the screen. Ask the user to turn it on in Faiza settings."
+            ?: return "Gaming mode needs the screen service. " + A11yStatus.errorText(this)
         val pkg = a.foregroundPackage
         // Asked by the user: any app on screen counts (some games aren't marked as games), except the home screen.
         val home = packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)
@@ -548,7 +548,7 @@ class FloatingOrbService : Service(), TextToSpeech.OnInitListener {
 
     /** One look + one tip, without the mode. */
     suspend fun gameGuideOnce(): String {
-        val a = FaizaAccessibilityService.instance ?: return "ERROR: Accessibility Service is off."
+        val a = FaizaAccessibilityService.instance ?: return A11yStatus.errorText(this)
         val s = live ?: return "No live voice chat — use look_at_screen to see the game instead."
         if (!s.acceptsImages) return "This voice model can't see images; use look_at_screen instead."
         val b64 = a.screenshotJpeg(maxSide = 768, quality = 55, fast = true) ?: return "ERROR: couldn't capture the screen."
