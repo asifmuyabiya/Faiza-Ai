@@ -72,9 +72,31 @@ object Calc {
         return totals(inMonth(txns, ym)).expense / days.coerceAtLeast(1)
     }
 
-    /** Projected month-end spend at the current pace (only meaningful for the running month). */
-    fun projection(txns: List<Txn>, ym: YearMonth, today: LocalDate): Poisha =
-        dailyAverage(txns, ym, today) * ym.lengthOfMonth()
+    /** Days left in the month counting today (0 if the month is over, whole month if it hasn't started). */
+    fun daysLeft(ym: YearMonth, today: LocalDate): Int = when {
+        ym == YearMonth.from(today) -> ym.lengthOfMonth() - today.dayOfMonth + 1
+        ym.isAfter(YearMonth.from(today)) -> ym.lengthOfMonth()
+        else -> 0
+    }
+
+    /**
+     * How much can still be spent per day and stay inside [budget]: what's left of the budget
+     * shared over the remaining days. A heavy day lowers the later days' limit, a light day raises it.
+     * Null when there's no budget or the month is over; 0 once the budget is used up.
+     */
+    fun dailyAllowance(budget: Poisha, spent: Poisha, ym: YearMonth, today: LocalDate): Poisha? {
+        val days = daysLeft(ym, today)
+        if (budget <= 0 || days <= 0) return null
+        val perDay = (budget - spent).coerceAtLeast(0) / days
+        return perDay - perDay % 100 // whole taka, rounded down so the limit is never overstated
+    }
+
+    /** Actual expense from day 1 up to [dayOfMonth] of [ym] — "last month by this date". */
+    fun spentUntilDay(txns: List<Txn>, ym: YearMonth, dayOfMonth: Int): Poisha {
+        val from = ym.atDay(1).toEpochDay()
+        val to = ym.atDay(dayOfMonth.coerceIn(1, ym.lengthOfMonth())).toEpochDay()
+        return txns.filter { it.type == TxType.EXPENSE && it.day in from..to }.sumOf { it.amount }
+    }
 
     /** Percent change from [old] to [new]; null when there's nothing to compare against. */
     fun change(old: Poisha, new: Poisha): Int? = if (old <= 0) null else (((new - old) * 100.0) / old).let { Math.round(it).toInt() }

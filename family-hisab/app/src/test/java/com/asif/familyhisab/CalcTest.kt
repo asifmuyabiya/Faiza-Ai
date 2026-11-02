@@ -61,6 +61,22 @@ class CalcTest {
         assertNull(Calc.evalExpr("1..2"))
     }
 
+    @Test fun dailyAllowanceFollowsWhatIsLeft() {
+        val today = LocalDate.of(2026, 11, 21) // 10 days left counting today
+        assertEquals(10, Calc.daysLeft(nov, today))
+        assertEquals(100000L, Calc.dailyAllowance(3000000, 2000000, nov, today)) // ৳10,000 left / 10 days
+        assertEquals(0L, Calc.dailyAllowance(3000000, 3500000, nov, today))      // over budget
+        assertEquals(87900L, Calc.dailyAllowance(4500000, 1950000, nov, LocalDate.of(2026, 11, 2))) // ৳879.31 → ৳879
+        assertNull(Calc.dailyAllowance(0, 100, nov, today))                       // no budget
+        assertNull(Calc.dailyAllowance(3000000, 0, YearMonth.of(2026, 10), today)) // month over
+    }
+
+    @Test fun lastMonthSameStretch() {
+        // October 1–3 has nothing, Oct 30 has 999 — only counted once we pass the 30th.
+        assertEquals(0L, Calc.spentUntilDay(txns, YearMonth.of(2026, 10), 3))
+        assertEquals(99900L, Calc.spentUntilDay(txns, YearMonth.of(2026, 10), 31))
+    }
+
     @Test fun changePercent() {
         assertEquals(50, Calc.change(1000, 1500))
         assertEquals(-25, Calc.change(1000, 750))

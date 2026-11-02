@@ -132,15 +132,39 @@ fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
 
         // ---------- Quick stats ----------
         item {
+            val allowance = Calc.dailyAllowance(d.budget.monthlyTotal, totals.expense, month, today)
+            val daysLeft = Calc.daysLeft(month, today)
+            // Same stretch of last month (1st → today's date) — real numbers, not a guess.
+            val lastMonthSoFar = Calc.spentUntilDay(d.txns, month.minusMonths(1), today.dayOfMonth)
             RowSpaced {
                 StatTile("আজ", f.money(Calc.spentOn(d.txns, today)), "📅", x.expense, Modifier.weight(1f))
                 StatTile("এই সপ্তাহ", f.money(Calc.spentThisWeek(d.txns, today)), "🗓️", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                StatTile(
-                    if (isNow) "মাস শেষে" else "দৈনিক গড়",
-                    f.money(if (isNow) Calc.projection(d.txns, month, today) else Calc.dailyAverage(d.txns, month, today)),
-                    "📈", x.income, Modifier.weight(1f),
-                )
+                when {
+                    allowance != null -> StatTile(
+                        "দিনপ্রতি", if (allowance > 0) f.money(allowance) else "শেষ!", "🎯",
+                        if (allowance > 0) x.income else x.expense, Modifier.weight(1f),
+                    )
+                    isNow -> StatTile("গত মাসে", f.money(lastMonthSoFar), "🔁", x.income, Modifier.weight(1f))
+                    else -> StatTile("দৈনিক গড়", f.money(Calc.dailyAverage(d.txns, month, today)), "📈", x.income, Modifier.weight(1f))
+                }
             }
+            val hint = when {
+                allowance != null && allowance > 0 ->
+                    "বাজেটে থাকতে বাকি ${f.num(daysLeft)} দিনে প্রতিদিন সর্বোচ্চ ${f.money(allowance)} খরচ করতে পারবেন"
+                allowance != null ->
+                    "এই মাসের বাজেট শেষ — ${f.money(totals.expense - d.budget.monthlyTotal)} বেশি খরচ হয়েছে"
+                isNow && lastMonthSoFar > 0 -> {
+                    val diff = totals.expense - lastMonthSoFar
+                    "গত মাসের ১–${f.num(today.dayOfMonth)} তারিখের চেয়ে ${f.money(kotlin.math.abs(diff))} " + if (diff > 0) "বেশি খরচ হয়েছে" else "কম খরচ হয়েছে"
+                }
+                isNow -> "বাজেট সেট করলে প্রতিদিন কত খরচ করা যাবে তা এখানে দেখাবে"
+                else -> null
+            }
+            if (hint != null) Text(
+                hint, style = MaterialTheme.typography.labelMedium, color = x.muted,
+                modifier = Modifier.padding(start = 6.dp, top = 8.dp)
+                    .then(if (d.budget.monthlyTotal <= 0) Modifier.clickable { nav.go("budget") } else Modifier),
+            )
             Spacer(Modifier.height(10.dp))
         }
 
