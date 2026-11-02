@@ -72,7 +72,7 @@ import com.asif.familyhisab.ui.screens.SettingsScreen
 import com.asif.familyhisab.ui.screens.ShoppingScreen
 import com.asif.familyhisab.ui.screens.TxnsScreen
 import com.asif.familyhisab.ui.theme.HeroColors
-import java.time.YearMonth
+import com.asif.familyhisab.data.Period
 
 /** Simple route builder for the add/edit screen. */
 object Routes {
@@ -112,9 +112,10 @@ private val tabs = listOf(
 fun App(store: Store, d: AppData) {
     val controller = rememberNavController()
     val nav = remember(controller) { Nav(controller) }
-    var monthStr by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
-    val month = YearMonth.parse(monthStr)
-    val setMonth: (YearMonth) -> Unit = { monthStr = it.toString() }
+    // One date filter shared by home, transactions, reports and member pages.
+    var periodStr by rememberSaveable { mutableStateOf(Period.thisMonth().encode()) }
+    val period = Period.decode(periodStr) ?: Period.thisMonth()
+    val setPeriod: (Period) -> Unit = { periodStr = it.encode() }
     val entry by controller.currentBackStackEntryAsState()
     val current = entry?.destination?.route
     val showBar = current in tabs.map { it.route }
@@ -128,9 +129,9 @@ fun App(store: Store, d: AppData) {
             popEnterTransition = { fadeIn() },
             popExitTransition = { fadeOut() + slideOutHorizontally { it / 12 } },
         ) {
-            composable("home") { HomeScreen(d, month, setMonth, nav) }
-            composable("txns") { TxnsScreen(d, month, setMonth, nav, store) }
-            composable("reports") { ReportsScreen(d, month, setMonth, nav) }
+            composable("home") { HomeScreen(d, period, setPeriod, nav, store) }
+            composable("txns") { TxnsScreen(d, period, setPeriod, nav, store) }
+            composable("reports") { ReportsScreen(d, period, setPeriod, nav) }
             composable("more") { MoreScreen(d, nav) }
             composable(
                 "add?id={id}&type={type}&member={member}&cat={cat}&amt={amt}&items={items}",
@@ -151,7 +152,7 @@ fun App(store: Store, d: AppData) {
                     fromShopping = a?.getString("items") == "1",
                 )
             }
-            composable("member/{id}") { e -> MemberScreen(d, e.arguments?.getString("id") ?: "", month, setMonth, nav, store) }
+            composable("member/{id}") { e -> MemberScreen(d, e.arguments?.getString("id") ?: "", period, setPeriod, nav, store) }
             composable("members") { MembersScreen(d, nav, store) }
             composable("budget") { BudgetScreen(d, store, nav) }
             composable("debts") { DebtsScreen(d, store, nav) }

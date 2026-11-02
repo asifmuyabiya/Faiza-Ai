@@ -19,6 +19,7 @@ import com.asif.familyhisab.data.DebtDir
 import com.asif.familyhisab.data.FAMILY_ID
 import com.asif.familyhisab.data.Goal
 import com.asif.familyhisab.data.PayMethod
+import com.asif.familyhisab.data.Period
 import com.asif.familyhisab.data.ShopItem
 import com.asif.familyhisab.data.Store
 import com.asif.familyhisab.data.ThemeMode
@@ -36,6 +37,9 @@ import com.asif.familyhisab.ui.theme.HisabTheme
 import com.asif.familyhisab.util.Fmt
 import com.asif.familyhisab.util.LocalFmt
 import org.junit.Rule
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 import org.junit.Test
 import java.time.LocalDate
 import java.time.YearMonth
@@ -81,7 +85,8 @@ class ScreensShot {
                 budget = Budget(monthlyTotal = 45000_00, perMember = mapOf("ibad" to 4000_00)),
                 debts = listOf(
                     Debt(person = "করিম ভাই", dir = DebtDir.GAVE, amount = 5000_00, day = LocalDate.now().minusDays(9).toEpochDay(), phone = "017"),
-                    Debt(person = "মুদি দোকান", dir = DebtDir.TOOK, amount = 1200_00, day = LocalDate.now().minusDays(3).toEpochDay()),
+                    Debt(person = "মুদি দোকান", dir = DebtDir.TOOK, amount = 1200_00, day = LocalDate.now().toEpochDay()),
+                    Debt(person = "রহিম মামা", dir = DebtDir.GAVE, amount = 3000_00, day = LocalDate.now().minusDays(40).toEpochDay(), dueDay = LocalDate.now().minusDays(2).toEpochDay()),
                 ),
                 shopping = listOf(ShopItem(name = "পেঁয়াজ", qty = "২ কেজি"), ShopItem(name = "ডিম", qty = "১ ডজন")),
                 goals = listOf(Goal(name = "ঈদের কেনাকাটা", emoji = "🌙", target = 30000_00, saved = 12000_00)),
@@ -103,13 +108,25 @@ class ScreensShot {
 
     private val d = sample()
 
-    @Test fun home() = paparazzi.snapshot { Frame(false) { nav, _ -> HomeScreen(d, month, {}, nav) } }
-    @Test fun homeDark() = paparazzi.snapshot { Frame(true) { nav, _ -> HomeScreen(d, month, {}, nav) } }
+    @Test fun home() = paparazzi.snapshot { Frame(false) { nav, s -> HomeScreen(d, Period.thisMonth(), {}, nav, s) } }
+    @Test fun homeDark() = paparazzi.snapshot { Frame(true) { nav, s -> HomeScreen(d, Period.thisMonth(), {}, nav, s) } }
     @Test fun add() = paparazzi.snapshot { Frame(false) { nav, s -> AddScreen(d, s, nav, null, null, FAMILY_ID, "bazar", 245000, false) } }
     @Test fun addDark() = paparazzi.snapshot { Frame(true) { nav, s -> AddScreen(d, s, nav, "t2", null, null, null, null, false) } }
-    @Test fun txns() = paparazzi.snapshot { Frame(false) { nav, s -> TxnsScreen(d, month, {}, nav, s) } }
-    @Test fun reports() = paparazzi.snapshot { Frame(false) { nav, _ -> ReportsScreen(d, month, {}, nav) } }
-    @Test fun member() = paparazzi.snapshot { Frame(false) { nav, s -> MemberScreen(d, "ibad", month, {}, nav, s) } }
+    @Test fun txns() = paparazzi.snapshot { Frame(false) { nav, s -> TxnsScreen(d, Period.lastDays(7, LocalDate.now()), {}, nav, s) } }
+    @Test fun reports() = paparazzi.snapshot { Frame(false) { nav, _ -> ReportsScreen(d, Period.thisMonth().shift(-1), {}, nav) } }
+    @Test fun member() = paparazzi.snapshot { Frame(false) { nav, s -> MemberScreen(d, "ibad", Period.thisMonth().shift(-1), {}, nav, s) } }
     @Test fun more() = paparazzi.snapshot { Frame(true) { nav, _ -> MoreScreen(d, nav) } }
     @Test fun debts() = paparazzi.snapshot { Frame(false) { nav, s -> DebtsScreen(d, s, nav) } }
+
+    @Test fun donutSelected() = paparazzi.snapshot {
+        Frame(false) { _, _ ->
+            val slices = listOf(15000L to androidx.compose.ui.graphics.Color(0xFF6C5CE7), 2400L to androidx.compose.ui.graphics.Color(0xFF00B894),
+                1250L to androidx.compose.ui.graphics.Color(0xFF0984E3), 850L to androidx.compose.ui.graphics.Color(0xFF55EFC4))
+            androidx.compose.foundation.layout.Row(androidx.compose.ui.Modifier.padding(24.dp)) {
+                com.asif.familyhisab.ui.components.Donut(slices, androidx.compose.ui.Modifier.size(160.dp), 20.dp)
+                androidx.compose.foundation.layout.Spacer(androidx.compose.ui.Modifier.size(24.dp))
+                com.asif.familyhisab.ui.components.Donut(slices, androidx.compose.ui.Modifier.size(160.dp), 20.dp, selected = 1, onSelect = {})
+            }
+        }
+    }
 }

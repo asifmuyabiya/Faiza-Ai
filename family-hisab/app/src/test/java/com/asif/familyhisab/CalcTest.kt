@@ -61,20 +61,47 @@ class CalcTest {
         assertNull(Calc.evalExpr("1..2"))
     }
 
-    @Test fun dailyAllowanceFollowsWhatIsLeft() {
-        val today = LocalDate.of(2026, 11, 21) // 10 days left counting today
-        assertEquals(10, Calc.daysLeft(nov, today))
-        assertEquals(100000L, Calc.dailyAllowance(3000000, 2000000, nov, today)) // ৳10,000 left / 10 days
-        assertEquals(0L, Calc.dailyAllowance(3000000, 3500000, nov, today))      // over budget
-        assertEquals(87900L, Calc.dailyAllowance(4500000, 1950000, nov, LocalDate.of(2026, 11, 2))) // ৳879.31 → ৳879
-        assertNull(Calc.dailyAllowance(0, 100, nov, today))                       // no budget
-        assertNull(Calc.dailyAllowance(3000000, 0, YearMonth.of(2026, 10), today)) // month over
+    @Test fun perDaySpreadsOverDaysPassed() {
+        val one = listOf(Txn(amount = 100000, categoryId = "bazar", day = day(1)))
+        val p = com.asif.familyhisab.data.Period.month(nov)
+        assertEquals(100000L, Calc.perDay(one, p, LocalDate.of(2026, 11, 1))) // 1000 on day 1
+        assertEquals(50000L, Calc.perDay(one, p, LocalDate.of(2026, 11, 2)))  // nothing on day 2 → 500
+        assertEquals(33300L, Calc.perDay(one, p, LocalDate.of(2026, 11, 3)))  // → 333
+        assertEquals(3300L, Calc.perDay(one, p, LocalDate.of(2027, 1, 1)))    // month over → ÷30
+        assertEquals(0L, Calc.perDay(one, p, LocalDate.of(2026, 10, 1)))      // not started
     }
 
-    @Test fun lastMonthSameStretch() {
-        // October 1–3 has nothing, Oct 30 has 999 — only counted once we pass the 30th.
-        assertEquals(0L, Calc.spentUntilDay(txns, YearMonth.of(2026, 10), 3))
-        assertEquals(99900L, Calc.spentUntilDay(txns, YearMonth.of(2026, 10), 31))
+    @Test fun periodsShiftAndCount() {
+        val P = com.asif.familyhisab.data.Period
+        val m = P.month(nov)
+        assertEquals(30, m.days)
+        assertEquals(LocalDate.of(2026, 10, 1), m.previous()!!.from)
+        val w = P.week(LocalDate.of(2026, 11, 3)) // Tuesday → week starts Saturday 31 Oct
+        assertEquals(LocalDate.of(2026, 10, 31), w.from)
+        assertEquals(7, w.days)
+        val r = P.lastDays(7, LocalDate.of(2026, 11, 3))
+        assertEquals(LocalDate.of(2026, 10, 21), r.shift(-1).from)
+        assertEquals(r, P.decode(r.encode()))
+        assertEquals(2, Calc.inPeriod(txns, P.range(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 1))).size)
+    }
+
+    @Test fun trendIsDailyForShortAndMonthlyForLong() {
+        val P = com.asif.familyhisab.data.Period
+        assertEquals(30, Calc.trend(txns, P.month(nov)).size)
+        val y = Calc.trend(txns, P.year(2026))
+        assertEquals(12, y.size)
+        assertEquals(99900L, y[9].expense)
+    }
+
+    @Test fun loansMoveCashButAreNotIncomeOrExpense() {
+        val P = com.asif.familyhisab.data.Period
+        val took = Debt(person = "Rahim", dir = DebtDir.TOOK, amount = 1000000, day = day(5))
+        assertEquals(1000000L, Calc.debtFlow(listOf(took), P.month(nov)))           // +10,000 in hand
+        val repaid = took.copy(payments = listOf(DebtPayment(1000000, day(15))))
+        assertEquals(0L, Calc.debtFlow(listOf(repaid), P.month(nov)))               // back to zero
+        val lent = Debt(person = "Karim", dir = DebtDir.GAVE, amount = 500000, day = day(2), payments = listOf(DebtPayment(200000, day(9))))
+        assertEquals(-300000L, Calc.debtFlow(listOf(lent), P.month(nov)))
+        assertEquals(1, Calc.overdue(listOf(took.copy(dueDay = day(10))), LocalDate.of(2026, 11, 11)).size)
     }
 
     @Test fun changePercent() {

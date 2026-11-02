@@ -3,6 +3,10 @@ package com.asif.familyhisab.ui.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -196,29 +200,88 @@ fun budgetColor(fraction: Float, ok: Color, warn: Color, bad: Color) = when {
     else -> ok
 }
 
-/** Donut chart with a centre label. */
+/**
+ * Donut chart with a centre label. Tap a colour (or pass [selected]) to highlight it: that slice grows
+ * thicker, the rest fade. Tap it again or the middle to show all equally.
+ */
 @Composable
-fun Donut(slices: List<Pair<Long, Color>>, modifier: Modifier = Modifier, thickness: Dp = 22.dp, center: @Composable () -> Unit = {}) {
+fun Donut(
+    slices: List<Pair<Long, Color>>,
+    modifier: Modifier = Modifier,
+    thickness: Dp = 22.dp,
+    selected: Int? = null,
+    onSelect: ((Int?) -> Unit)? = null,
+    center: @Composable () -> Unit = {},
+) {
     val total = slices.sumOf { it.first }.toFloat()
     val sweep by animateFloatAsState(1f, tween(900), label = "d")
     val track = MaterialTheme.colorScheme.surfaceVariant
-    Box(modifier, contentAlignment = Alignment.Center) {
+    // One animated "focus" value per slice: 1 = normal/selected, 0 = faded.
+    val focus = slices.indices.map { i ->
+        animateFloatAsState(if (selected == null || selected == i) 1f else 0f, tween(300), label = "f$i").value
+    }
+    val grow = slices.indices.map { i ->
+        animateFloatAsState(if (selected == i) 1f else 0f, tween(300), label = "g$i").value
+    }
+    val tap = if (onSelect == null || total <= 0) Modifier else Modifier.pointerInput(slices, selected) {
+        detectTapGestures { pos ->
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val dx = pos.x - cx
+            val dy = pos.y - cy
+            val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+            val outer = size.width / 2f
+            val inner = outer - thickness.toPx() * 2.2f
+            if (dist < inner || dist > outer + 8) { onSelect(null); return@detectTapGestures }
+            var ang = Math.toDegrees(kotlin.math.atan2(dy.toDouble(), dx.toDouble())).toFloat() + 90f
+            if (ang < 0) ang += 360f
+            var acc = 0f
+            val hit = slices.indexOfFirst { (v, _) -> acc += 360f * v / total; ang <= acc }
+            onSelect(if (hit == selected || hit < 0) null else hit)
+        }
+    }
+    Box(modifier.then(tap), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val stroke = thickness.toPx()
-            val inset = stroke / 2
-            val arcSize = Size(size.width - stroke, size.height - stroke)
+            val maxStroke = stroke * 1.55f
+            val inset = maxStroke / 2
+            val arcSize = Size(size.width - maxStroke, size.height - maxStroke)
             drawArc(track, 0f, 360f, false, Offset(inset, inset), arcSize, style = Stroke(stroke))
             if (total > 0) {
                 var start = -90f
                 val gap = if (slices.size > 1) 2.5f else 0f
-                slices.forEach { (v, c) ->
+                slices.forEachIndexed { i, (v, c) ->
                     val s = 360f * v / total * sweep
-                    if (s > gap) drawArc(c, start + gap / 2, s - gap, false, Offset(inset, inset), arcSize, style = Stroke(stroke, cap = StrokeCap.Butt))
+                    if (s > gap) drawArc(
+                        c, start + gap / 2, s - gap, false, Offset(inset, inset), arcSize,
+                        alpha = 0.25f + 0.75f * focus[i],
+                        style = Stroke(stroke * (1f + 0.55f * grow[i]), cap = StrokeCap.Butt),
+                    )
                     start += s
                 }
             }
         }
         center()
+    }
+}
+
+/** A legend line that can be tapped to highlight its donut slice. */
+@Composable
+fun LegendRow(color: Color, label: String, value: String, selected: Boolean, dimmed: Boolean, onClick: () -> Unit) {
+    val bg by animateColorAsState(if (selected) color.copy(alpha = 0.16f) else Color.Transparent, label = "lb")
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(bg).clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 4.dp)
+            .graphicsLayer { alpha = if (dimmed) 0.4f else 1f },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(if (selected) 12.dp else 9.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(8.dp))
+        Text(
+            label, style = if (selected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        Text(value, style = if (selected) MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.labelMedium)
     }
 }
 

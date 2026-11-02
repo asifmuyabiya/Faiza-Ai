@@ -38,7 +38,8 @@ import com.asif.familyhisab.ui.Nav
 import com.asif.familyhisab.ui.Routes
 import com.asif.familyhisab.ui.components.Card
 import com.asif.familyhisab.ui.components.EmptyState
-import com.asif.familyhisab.ui.components.MonthSwitcher
+import com.asif.familyhisab.ui.components.PeriodPicker
+import com.asif.familyhisab.data.Period
 import com.asif.familyhisab.ui.components.Pill
 import com.asif.familyhisab.ui.components.RowSpaced
 import com.asif.familyhisab.ui.components.StatTile
@@ -46,10 +47,9 @@ import com.asif.familyhisab.ui.components.TxRow
 import com.asif.familyhisab.ui.theme.LocalExtra
 import com.asif.familyhisab.util.LocalFmt
 import java.time.LocalDate
-import java.time.YearMonth
 
 @Composable
-fun TxnsScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav: Nav, @Suppress("UNUSED_PARAMETER") store: Store) {
+fun TxnsScreen(d: AppData, period: Period, setPeriod: (Period) -> Unit, nav: Nav, @Suppress("UNUSED_PARAMETER") store: Store) {
     val f = LocalFmt.current
     val x = LocalExtra.current
     var query by rememberSaveable { mutableStateOf("") }
@@ -58,7 +58,7 @@ fun TxnsScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
     var catFilter by rememberSaveable { mutableStateOf<String?>(null) }
     val searching = query.isNotBlank()
 
-    val base = remember(d.txns, month, searching) { if (searching) d.txns else Calc.inMonth(d.txns, month) }
+    val base = remember(d.txns, period, searching) { if (searching) d.txns else Calc.inPeriod(d.txns, period) }
     val list = remember(base, query, typeFilter, memberFilter, catFilter, d.categories, d.members) {
         val q = query.trim().lowercase()
         base.filter { t ->
@@ -80,7 +80,7 @@ fun TxnsScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
         item {
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("লেনদেন", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
-                if (!searching) MonthSwitcher(month, setMonth)
+                if (!searching) PeriodPicker(period, setPeriod, earliest = d.txns.minOfOrNull { it.day }?.let { LocalDate.ofEpochDay(it) })
             }
             OutlinedTextField(
                 query, { query = it }, Modifier.fillMaxWidth().padding(vertical = 8.dp),

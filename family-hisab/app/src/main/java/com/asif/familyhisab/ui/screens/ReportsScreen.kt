@@ -39,24 +39,34 @@ import com.asif.familyhisab.ui.components.Card
 import com.asif.familyhisab.ui.components.Donut
 import com.asif.familyhisab.ui.components.EmojiBadge
 import com.asif.familyhisab.ui.components.GradientBox
-import com.asif.familyhisab.ui.components.MonthSwitcher
+import com.asif.familyhisab.ui.components.PeriodPicker
+import com.asif.familyhisab.ui.components.period
+import com.asif.familyhisab.data.Period
+import com.asif.familyhisab.data.PKind
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.graphicsLayer
+import java.time.LocalDate
 import com.asif.familyhisab.ui.components.Pill
 import com.asif.familyhisab.ui.components.ProgressBar
 import com.asif.familyhisab.ui.components.TxRow
 import com.asif.familyhisab.ui.components.c
 import com.asif.familyhisab.ui.theme.LocalExtra
 import com.asif.familyhisab.util.LocalFmt
-import java.time.Month
 import java.time.YearMonth
 
 @Composable
-fun ReportsScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav: Nav) {
+fun ReportsScreen(d: AppData, period: Period, setPeriod: (Period) -> Unit, nav: Nav) {
     val f = LocalFmt.current
     val x = LocalExtra.current
-    var tab by rememberSaveable { mutableIntStateOf(0) }
+    val today = LocalDate.now()
+    var catSel by remember(period) { mutableStateOf<Int?>(null) }
 
-    val periodTx = remember(d.txns, month, tab) { if (tab == 0) Calc.inMonth(d.txns, month) else Calc.inYear(d.txns, month.year) }
-    val prevTx = remember(d.txns, month, tab) { if (tab == 0) Calc.inMonth(d.txns, month.minusMonths(1)) else Calc.inYear(d.txns, month.year - 1) }
+    val periodTx = remember(d.txns, period) { Calc.inPeriod(d.txns, period) }
+    val prevPeriod = period.previous()
+    val prevTx = remember(d.txns, period) { prevPeriod?.let { Calc.inPeriod(d.txns, it) } ?: emptyList() }
     val totals = Calc.totals(periodTx)
     val prevTotals = Calc.totals(prevTx)
     val byMember = remember(periodTx) { Calc.expenseByMember(periodTx) }
@@ -65,20 +75,23 @@ fun ReportsScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, n
     val incomeByCat = remember(periodTx) { Calc.byCategory(periodTx, TxType.INCOME) }
     val itemStats = remember(periodTx) { Calc.itemStats(periodTx).take(8) }
     val biggest = remember(periodTx) { periodTx.filter { it.type == TxType.EXPENSE }.sortedByDescending { it.amount }.take(5) }
+    val trend = remember(d.txns, period) { Calc.trend(d.txns, period) }
+    val earliest = remember(d.txns) { d.txns.minOfOrNull { it.day }?.let { LocalDate.ofEpochDay(it) } }
 
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 130.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("রিপোর্ট", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
-                if (tab == 0) MonthSwitcher(month, setMonth)
+                PeriodPicker(period, setPeriod, earliest = earliest)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pill("মাসিক", tab == 0, { tab = 0 }, emoji = "🗓️")
-                Pill("বার্ষিক ${f.num(month.year)}", tab == 1, { tab = 1 }, emoji = "📆")
-                if (tab == 1) {
-                    Pill("◀", false, { setMonth(month.minusYears(1)) })
-                    Pill("▶", false, { setMonth(month.plusYears(1)) })
-                }
+            Spacer(Modifier.height(4.dp))
+            // Quick switch: দৈনিক / সাপ্তাহিক / মাসিক / বার্ষিক — keeps the date you're looking at.
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val anchor = if (period.contains(today.toEpochDay())) today else period.to
+                Pill("দৈনিক", period.kind == PKind.DAY, { setPeriod(Period.day(anchor)) }, emoji = "📅")
+                Pill("সাপ্তাহিক", period.kind == PKind.WEEK, { setPeriod(Period.week(anchor)) }, emoji = "🗓️")
+                Pill("মাসিক", period.kind == PKind.MONTH, { setPeriod(Period.month(YearMonth.from(anchor))) }, emoji = "📆")
+                Pill("বার্ষিক", period.kind == PKind.YEAR, { setPeriod(Period.year(anchor.year)) }, emoji = "🗂️")
             }
         }
 
@@ -86,7 +99,7 @@ fun ReportsScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, n
         item {
             GradientBox(x.hero) {
                 Column(Modifier.padding(20.dp)) {
-                    Text(if (tab == 0) f.month(month) else "${f.num(month.year)} সাল", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge)
+                    Text(f.period(period, today) + if (period.kind == PKind.RANGE || period.kind == PKind.WEEK || period.kind == PKind.ALL) "  ·  ${f.date(period.from)} – ${f.date(period.to)}" else "", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(10.dp))
                     Row {
                         SumCol("মোট খরচ", f.money(totals.expense), Calc.change(prevTotals.expense, totals.expense), Modifier.weight(1f))
@@ -111,29 +124,26 @@ fun ReportsScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, n
         // Trend chart
         item {
             Card {
-                if (tab == 0) {
-                    val daily = Calc.dailyExpense(periodTx, month)
-                    Text("📈 দিনভিত্তিক খরচ", style = MaterialTheme.typography.titleMedium)
-                    Text("সর্বোচ্চ: ${f.money(daily.maxOrNull() ?: 0)} · দৈনিক গড়: ${f.money(Calc.dailyAverage(d.txns, month, java.time.LocalDate.now()))}", style = MaterialTheme.typography.bodySmall, color = x.muted)
-                    Spacer(Modifier.height(12.dp))
-                    BarChart(
-                        labels = daily.indices.map { f.num(it + 1) }, a = daily, colorA = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.fillMaxWidth().height(150.dp), showEvery = 5,
-                        highlight = if (month == YearMonth.now()) java.time.LocalDate.now().dayOfMonth - 1 else -1,
-                    )
-                } else {
-                    val months = Month.entries.map { YearMonth.of(month.year, it) }.map { it to Calc.totals(Calc.inMonth(d.txns, it)) }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("📊 মাসভিত্তিক", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                        Dot(x.expense); Text(" খরচ  ", style = MaterialTheme.typography.labelSmall, color = x.muted)
-                        Dot(x.income); Text(" আয়", style = MaterialTheme.typography.labelSmall, color = x.muted)
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    BarChart(
-                        labels = months.map { f.monthShort(it.first).take(3) }, a = months.map { it.second.expense }, colorA = x.expense,
-                        b = months.map { it.second.income }, colorB = x.income, modifier = Modifier.fillMaxWidth().height(170.dp), showEvery = 2,
-                    )
+                val monthly = trend.firstOrNull()?.monthly == true
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (monthly) "📊 মাসভিত্তিক" else "📈 দিনভিত্তিক", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    Dot(x.expense); Text(" খরচ  ", style = MaterialTheme.typography.labelSmall, color = x.muted)
+                    if (monthly) { Dot(x.income); Text(" আয়", style = MaterialTheme.typography.labelSmall, color = x.muted) }
                 }
+                Text(
+                    "সর্বোচ্চ: ${f.money(trend.maxOfOrNull { it.expense } ?: 0)} · দিনপ্রতি গড়: ${f.money(Calc.perDay(d.txns, period, today))}",
+                    style = MaterialTheme.typography.bodySmall, color = x.muted,
+                )
+                Spacer(Modifier.height(12.dp))
+                val labels = trend.map { if (it.monthly) f.monthShort(YearMonth.from(it.label)) else f.num(it.label.dayOfMonth) }
+                BarChart(
+                    labels = labels, a = trend.map { it.expense }, colorA = x.expense,
+                    // Daily view shows spending only — one salary day would otherwise flatten every other bar.
+                    b = if (monthly) trend.map { it.income } else null, colorB = x.income,
+                    modifier = Modifier.fillMaxWidth().height(170.dp),
+                    showEvery = when { trend.size > 20 -> 5; trend.size > 8 -> 2; else -> 1 },
+                    highlight = trend.indexOfFirst { if (it.monthly) YearMonth.from(it.label) == YearMonth.from(today) else it.label == today },
+                )
             }
         }
 
@@ -169,19 +179,36 @@ fun ReportsScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, n
                 Text("🏷️ খাতভিত্তিক খরচ", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(12.dp))
                 if (byCat.isEmpty()) Text("কোনো খরচ নেই", color = x.muted) else {
+                    val sel = catSel?.takeIf { it < byCat.size }
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Donut(byCat.map { it.second to (d.category(it.first)?.color ?: 0xFFB2BEC3).c() }, Modifier.size(170.dp), 24.dp) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("মোট", style = MaterialTheme.typography.labelSmall, color = x.muted)
-                                Text(f.money(totals.expense), style = MaterialTheme.typography.titleMedium)
+                        Donut(byCat.map { it.second to (d.category(it.first)?.color ?: 0xFFB2BEC3).c() }, Modifier.size(190.dp), 24.dp, selected = sel, onSelect = { catSel = it }) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 44.dp)) {
+                                if (sel == null) {
+                                    Text("মোট", style = MaterialTheme.typography.labelSmall, color = x.muted)
+                                    Text(f.money(totals.expense), style = MaterialTheme.typography.titleMedium)
+                                } else {
+                                    val c = d.category(byCat[sel].first)
+                                    Text("${c?.emoji ?: ""} ${c?.name ?: ""}", style = MaterialTheme.typography.labelSmall, color = x.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(f.money(byCat[sel].second), style = MaterialTheme.typography.titleMedium, color = (c?.color ?: 0xFFB2BEC3).c())
+                                    Text("${f.num(Math.round(Calc.percent(byCat[sel].second, totals.expense) * 100))}%", style = MaterialTheme.typography.labelSmall, color = x.muted)
+                                }
                             }
                         }
                     }
-                    Spacer(Modifier.height(14.dp))
-                    byCat.forEach { (id, v) ->
+                    Text("রঙে বা নিচের নামে চাপ দিন", style = MaterialTheme.typography.labelSmall, color = x.muted, modifier = Modifier.fillMaxWidth().padding(top = 6.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Spacer(Modifier.height(10.dp))
+                    byCat.forEachIndexed { i, (id, v) ->
                         val c = d.category(id)
                         val ch = Calc.change(prevByCat[id] ?: 0, v)
-                        Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        val col = (c?.color ?: 0xFFB2BEC3).c()
+                        Row(
+                            Modifier.clip(RoundedCornerShape(14.dp))
+                                .background(if (sel == i) col.copy(alpha = 0.14f) else Color.Transparent)
+                                .clickable { catSel = if (sel == i) null else i }
+                                .graphicsLayer { alpha = if (sel != null && sel != i) 0.4f else 1f }
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             EmojiBadge(c?.emoji ?: "📦", c?.color ?: 0xFFB2BEC3, 36.dp)
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {

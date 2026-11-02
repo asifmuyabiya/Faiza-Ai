@@ -285,6 +285,18 @@ fun DebtsScreen(d: AppData, store: Store, nav: Nav) {
             }
         }
         item {
+            Card(padding = 14.dp) {
+                Text("💡 ধার-বাকির নিয়ম", style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "ধার নেওয়া টাকা আয় নয়, ধার শোধ করাও খরচ নয় — তাই এগুলো আয়-খরচের হিসাবে যোগ হয় না। " +
+                        "ধারের টাকা দিয়ে যা কিনবেন (বাজার, বিল) শুধু সেটাই খরচ হিসেবে লিখবেন। " +
+                        "হোমে \"ধার-বাকি মিলিয়ে হাতে আছে\" লাইনে দেখবেন ধার নেওয়া/শোধ করা মিলিয়ে হাতে আসলে কত টাকা আছে।",
+                    style = MaterialTheme.typography.bodySmall, color = x.muted,
+                )
+            }
+        }
+        item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Pill("পাবো", tab == 0, { tab = 0 }, color = x.income)
                 Pill("দেবো", tab == 1, { tab = 1 }, color = x.expense)
@@ -312,6 +324,19 @@ fun DebtsScreen(d: AppData, store: Store, nav: Nav) {
                         Text("মোট ${f.money(debt.amount)}", style = MaterialTheme.typography.labelSmall, color = x.muted)
                     }
                 }
+                debt.dueDay?.takeIf { !debt.settled }?.let { due ->
+                    val left = due - LocalDate.now().toEpochDay()
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "⏰ শোধের তারিখ ${f.date(LocalDate.ofEpochDay(due))} · " + when {
+                            left < 0 -> "মেয়াদ ${f.num(-left)} দিন পার হয়ে গেছে"
+                            left == 0L -> "আজই শেষ দিন"
+                            else -> "আর ${f.num(left)} দিন বাকি"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (left <= 0) x.expense else if (left <= 3) x.warn else x.muted,
+                    )
+                }
                 if (debt.paid > 0) {
                     Spacer(Modifier.height(10.dp))
                     ProgressBar(Calc.percent(debt.paid, debt.amount), col, height = 6.dp)
@@ -338,6 +363,9 @@ fun DebtsScreen(d: AppData, store: Store, nav: Nav) {
         var amount by remember(ex) { mutableStateOf(toExpr(ex?.amount ?: 0)) }
         var note by remember(ex) { mutableStateOf(ex?.note ?: "") }
         var dir by remember(ex) { mutableStateOf(ex?.dir ?: if (tab == 1) DebtDir.TOOK else DebtDir.GAVE) }
+        var given by remember(ex) { mutableStateOf(ex?.day ?: LocalDate.now().toEpochDay()) }
+        var due by remember(ex) { mutableStateOf(ex?.dueDay) }
+        var pick by remember(ex) { mutableStateOf<String?>(null) }
         FormDialog(
             title = if (ex == null) "নতুন বাকি / ধার" else "এডিট",
             onDismiss = { adding = false; editDebt = null },
@@ -345,7 +373,7 @@ fun DebtsScreen(d: AppData, store: Store, nav: Nav) {
                 val a = Calc.evalExpr(amount) ?: 0
                 if (person.isBlank() || a <= 0) { Toast.makeText(ctx, "নাম ও টাকা লিখুন", Toast.LENGTH_SHORT).show(); return@FormDialog }
                 store.saveDebt((ex ?: Debt(person = person, dir = dir, amount = a, day = LocalDate.now().toEpochDay()))
-                    .copy(person = person.trim(), phone = phone.trim(), amount = a, note = note.trim(), dir = dir))
+                    .copy(person = person.trim(), phone = phone.trim(), amount = a, note = note.trim(), dir = dir, day = given, dueDay = due))
                 adding = false; editDebt = null
             },
             extraButton = if (ex != null) ({
@@ -362,6 +390,20 @@ fun DebtsScreen(d: AppData, store: Store, nav: Nav) {
             Field(phone, { phone = it.filter { c -> c.isDigit() || c == '+' } }, "মোবাইল নম্বর (ঐচ্ছিক)")
             Field(amount, { amount = it }, "টাকা ৳", number = true)
             Field(note, { note = it }, "নোট (ঐচ্ছিক)")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Pill("📅 " + f.date(LocalDate.ofEpochDay(given)), false, { pick = "given" })
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Pill(due?.let { "⏰ শোধ: " + f.date(LocalDate.ofEpochDay(it)) } ?: "⏰ শোধের তারিখ (ঐচ্ছিক)", due != null, { pick = "due" })
+                if (due != null) TextButton(onClick = { due = null }) { Text("বাদ") }
+            }
+        }
+        pick?.let { which ->
+            DayPickerDialog(if (which == "due") due ?: (LocalDate.now().toEpochDay() + 30) else given, onDismiss = { pick = null }) { picked ->
+                if (which == "due") due = picked else given = picked
+                pick = null
+            }
         }
     }
 
@@ -622,4 +664,15 @@ fun CategoriesScreen(d: AppData, store: Store, nav: Nav) {
             ColorGrid(color) { color = it }
         }
     }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun DayPickerDialog(initialDay: Long, onDismiss: () -> Unit, onPick: (Long) -> Unit) {
+    val state = androidx.compose.material3.rememberDatePickerState(initialSelectedDateMillis = initialDay * 86_400_000L)
+    androidx.compose.material3.DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = { state.selectedDateMillis?.let { onPick(it / 86_400_000L) } ?: onDismiss() }) { Text("ঠিক আছে") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("বাতিল") } },
+    ) { androidx.compose.material3.DatePicker(state) }
 }

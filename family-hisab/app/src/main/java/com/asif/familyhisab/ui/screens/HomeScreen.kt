@@ -32,6 +32,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.asif.familyhisab.data.AppData
 import com.asif.familyhisab.data.Calc
+import com.asif.familyhisab.data.Period
+import com.asif.familyhisab.data.Settings
+import com.asif.familyhisab.data.Store
+import com.asif.familyhisab.data.ThemeMode
+import com.asif.familyhisab.ui.components.LegendRow
+import com.asif.familyhisab.ui.components.PeriodPicker
+import com.asif.familyhisab.ui.components.period
+import com.asif.familyhisab.ui.components.prevLabel
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BrightnessAuto
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.LightMode
 import com.asif.familyhisab.data.TxType
 import com.asif.familyhisab.ui.Nav
 import com.asif.familyhisab.ui.Routes
@@ -42,7 +59,6 @@ import com.asif.familyhisab.ui.components.Donut
 import com.asif.familyhisab.ui.components.EmojiBadge
 import com.asif.familyhisab.ui.components.EmptyState
 import com.asif.familyhisab.ui.components.GradientBox
-import com.asif.familyhisab.ui.components.MonthSwitcher
 import com.asif.familyhisab.ui.components.ProgressBar
 import com.asif.familyhisab.ui.components.RowSpaced
 import com.asif.familyhisab.ui.components.SectionTitle
@@ -59,19 +75,24 @@ import java.time.LocalTime
 import java.time.YearMonth
 
 @Composable
-fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav: Nav) {
+fun HomeScreen(d: AppData, period: Period, setPeriod: (Period) -> Unit, nav: Nav, store: Store) {
     val f = LocalFmt.current
     val x = LocalExtra.current
     val today = LocalDate.now()
-    val monthTx = remember(d.txns, month) { Calc.inMonth(d.txns, month) }
+    val monthTx = remember(d.txns, period) { Calc.inPeriod(d.txns, period) }
     val totals = remember(monthTx) { Calc.totals(monthTx) }
-    val prev = remember(d.txns, month) { Calc.totals(Calc.inMonth(d.txns, month.minusMonths(1))) }
+    val prevPeriod = period.previous()
+    val prev = remember(d.txns, period) { prevPeriod?.let { Calc.totals(Calc.inPeriod(d.txns, it)) } }
+    // Budget is monthly, so the budget card always looks at the running month.
+    val thisMonthSpent = remember(d.txns) { Calc.totals(Calc.inMonth(d.txns, YearMonth.now())).expense }
+    val debtFlow = remember(d.debts, period) { Calc.debtFlow(d.debts, period) }
+    val earliest = remember(d.txns) { d.txns.minOfOrNull { it.day }?.let { LocalDate.ofEpochDay(it) } }
+    var catSel by remember(period) { mutableStateOf<Int?>(null) }
     val byMember = remember(monthTx) { Calc.expenseByMember(monthTx).toMap() }
     val byCat = remember(monthTx) { Calc.byCategory(monthTx) }
-    val six = remember(d.txns, month) { Calc.lastMonths(d.txns, month, 6) }
+    val six = remember(d.txns, period) { Calc.lastMonths(d.txns, period.yearMonth, 6) }
     val quick = remember(d.txns) { Calc.quickPicks(d.txns) }
     val debt = remember(d.debts) { Calc.debtSummary(d.debts) }
-    val isNow = month == YearMonth.now()
 
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 130.dp)) {
         // ---------- Greeting ----------
@@ -87,6 +108,8 @@ fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
                     Text(f.weekday(today), style = MaterialTheme.typography.labelMedium, color = x.muted)
                     Text(f.date(today), style = MaterialTheme.typography.labelLarge)
                 }
+                Spacer(Modifier.width(8.dp))
+                ThemeButton(d.settings, store)
             }
             Spacer(Modifier.height(10.dp))
         }
@@ -97,14 +120,14 @@ fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
                 Column(Modifier.padding(22.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("পরিবারের মোট খরচ", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-                        MonthSwitcher(month, setMonth, onDark = true)
+                        PeriodPicker(period, setPeriod, onDark = true, earliest = earliest)
                     }
                     Spacer(Modifier.height(6.dp))
                     AnimatedMoney(totals.expense, MaterialTheme.typography.displayMedium, Color.White)
-                    val ch = Calc.change(prev.expense, totals.expense)
+                    val ch = prev?.let { Calc.change(it.expense, totals.expense) }
                     if (ch != null && ch != 0) {
                         Text(
-                            (if (ch > 0) "▲ " else "▼ ") + f.num(kotlin.math.abs(ch)) + "% গত মাসের চেয়ে " + (if (ch > 0) "বেশি" else "কম"),
+                            (if (ch > 0) "▲ " else "▼ ") + f.num(kotlin.math.abs(ch)) + "% ${prevLabel(period)} চেয়ে " + (if (ch > 0) "বেশি" else "কম"),
                             color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelMedium,
                         )
                     }
@@ -114,8 +137,18 @@ fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
                         Box(Modifier.width(1.dp).height(38.dp).background(Color.White.copy(alpha = 0.25f)))
                         HeroStat("💰 অবশিষ্ট", f.money(totals.balance), Modifier.weight(1f).padding(start = 14.dp))
                     }
+                    if (debtFlow != 0L) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = 0.10f)).clickable { nav.go("debts") }.padding(horizontal = 14.dp, vertical = 8.dp)) {
+                            Text(
+                                "🤝 ধার-বাকি মিলিয়ে হাতে আছে", color = Color.White.copy(alpha = 0.85f),
+                                style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f),
+                            )
+                            Text(f.money(totals.balance + debtFlow), color = Color.White, style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
                     val budget = d.budget.monthlyTotal
-                    if (budget > 0) {
+                    if (budget > 0 && period.isMonth) {
                         Spacer(Modifier.height(14.dp))
                         val frac = Calc.percent(totals.expense, budget)
                         Row {
@@ -132,38 +165,16 @@ fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
 
         // ---------- Quick stats ----------
         item {
-            val allowance = Calc.dailyAllowance(d.budget.monthlyTotal, totals.expense, month, today)
-            val daysLeft = Calc.daysLeft(month, today)
-            // Same stretch of last month (1st → today's date) — real numbers, not a guess.
-            val lastMonthSoFar = Calc.spentUntilDay(d.txns, month.minusMonths(1), today.dayOfMonth)
+            val elapsed = period.elapsedDays(today)
+            val perDay = Calc.perDay(d.txns, period, today)
             RowSpaced {
                 StatTile("আজ", f.money(Calc.spentOn(d.txns, today)), "📅", x.expense, Modifier.weight(1f))
                 StatTile("এই সপ্তাহ", f.money(Calc.spentThisWeek(d.txns, today)), "🗓️", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                when {
-                    allowance != null -> StatTile(
-                        "দিনপ্রতি", if (allowance > 0) f.money(allowance) else "শেষ!", "🎯",
-                        if (allowance > 0) x.income else x.expense, Modifier.weight(1f),
-                    )
-                    isNow -> StatTile("গত মাসে", f.money(lastMonthSoFar), "🔁", x.income, Modifier.weight(1f))
-                    else -> StatTile("দৈনিক গড়", f.money(Calc.dailyAverage(d.txns, month, today)), "📈", x.income, Modifier.weight(1f))
-                }
+                StatTile("দিনপ্রতি", f.money(perDay), "⚖️", x.income, Modifier.weight(1f))
             }
-            val hint = when {
-                allowance != null && allowance > 0 ->
-                    "বাজেটে থাকতে বাকি ${f.num(daysLeft)} দিনে প্রতিদিন সর্বোচ্চ ${f.money(allowance)} খরচ করতে পারবেন"
-                allowance != null ->
-                    "এই মাসের বাজেট শেষ — ${f.money(totals.expense - d.budget.monthlyTotal)} বেশি খরচ হয়েছে"
-                isNow && lastMonthSoFar > 0 -> {
-                    val diff = totals.expense - lastMonthSoFar
-                    "গত মাসের ১–${f.num(today.dayOfMonth)} তারিখের চেয়ে ${f.money(kotlin.math.abs(diff))} " + if (diff > 0) "বেশি খরচ হয়েছে" else "কম খরচ হয়েছে"
-                }
-                isNow -> "বাজেট সেট করলে প্রতিদিন কত খরচ করা যাবে তা এখানে দেখাবে"
-                else -> null
-            }
-            if (hint != null) Text(
-                hint, style = MaterialTheme.typography.labelMedium, color = x.muted,
-                modifier = Modifier.padding(start = 6.dp, top = 8.dp)
-                    .then(if (d.budget.monthlyTotal <= 0) Modifier.clickable { nav.go("budget") } else Modifier),
+            if (elapsed > 1) Text(
+                "${f.period(period, today)} — ${f.num(elapsed)} দিনে মোট ${f.money(totals.expense)} খরচ, গড়ে দিনপ্রতি ${f.money(perDay)}",
+                style = MaterialTheme.typography.labelMedium, color = x.muted, modifier = Modifier.padding(start = 6.dp, top = 8.dp),
             )
             Spacer(Modifier.height(10.dp))
         }
@@ -232,28 +243,37 @@ fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
                 Text("🍩 কোথায় খরচ হলো", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(14.dp))
                 if (byCat.isEmpty()) {
-                    Text("এই মাসে এখনো কোনো খরচ নেই", color = x.muted, style = MaterialTheme.typography.bodyMedium)
+                    Text("এই সময়ে কোনো খরচ নেই", color = x.muted, style = MaterialTheme.typography.bodyMedium)
                 } else {
                     val top = byCat.take(5)
                     val rest = byCat.drop(5).sumOf { it.second }
                     val slices = top.map { it.second to (d.category(it.first)?.color ?: 0xFFB2BEC3).c() } +
                         (if (rest > 0) listOf(rest to Color(0xFFB2BEC3)) else emptyList())
+                    val names = top.map { d.category(it.first)?.let { c -> "${c.emoji} ${c.name}" } ?: it.first } + (if (rest > 0) listOf("অন্যান্য") else emptyList())
+                    val sel = catSel?.takeIf { it < slices.size }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Donut(slices, Modifier.size(132.dp), 18.dp) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${f.num(byCat.size)}টি", style = MaterialTheme.typography.titleMedium)
-                                Text("খাত", style = MaterialTheme.typography.labelSmall, color = x.muted)
+                        Donut(slices, Modifier.size(140.dp), 18.dp, selected = sel, onSelect = { catSel = it }) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 30.dp)) {
+                                if (sel == null) {
+                                    Text("${f.num(byCat.size)}টি", style = MaterialTheme.typography.titleMedium)
+                                    Text("খাত", style = MaterialTheme.typography.labelSmall, color = x.muted)
+                                } else {
+                                    Text(f.money(slices[sel].first), style = MaterialTheme.typography.titleSmall, color = slices[sel].second, maxLines = 1)
+                                    Text("${f.num(Math.round(Calc.percent(slices[sel].first, totals.expense) * 100))}%", style = MaterialTheme.typography.labelMedium, color = x.muted)
+                                }
                             }
                         }
-                        Spacer(Modifier.width(16.dp))
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                            top.forEach { (id, v) ->
-                                val cat = d.category(id)
-                                Legend(cat?.color?.c() ?: Color.Gray, "${cat?.emoji ?: ""} ${cat?.name ?: id}", f.money(v))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            slices.forEachIndexed { i, (v, c) ->
+                                LegendRow(c, names[i], f.money(v), sel == i, sel != null && sel != i) { catSel = if (sel == i) null else i }
                             }
-                            if (rest > 0) Legend(Color(0xFFB2BEC3), "অন্যান্য", f.money(rest))
                         }
                     }
+                    Text(
+                        "রঙে বা নামে চাপ দিলে ওই খরচটা আলাদা করে দেখাবে", style = MaterialTheme.typography.labelSmall,
+                        color = x.muted, modifier = Modifier.padding(top = 8.dp),
+                    )
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -289,6 +309,8 @@ fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
                     Text(f.money(debt.toGet), style = MaterialTheme.typography.titleMedium, color = x.income)
                     Text("দেবো", style = MaterialTheme.typography.labelSmall, color = x.muted)
                     Text(f.money(debt.toGive), style = MaterialTheme.typography.titleMedium, color = x.expense)
+                    val late = Calc.overdue(d.debts, today).size
+                    if (late > 0) Text("⚠️ ${f.num(late)}টির মেয়াদ পার", style = MaterialTheme.typography.labelSmall, color = x.expense)
                 }
                 Card(Modifier.weight(1f), padding = 16.dp, onClick = { nav.go("budget") }) {
                     Text("🎯 বাজেট", style = MaterialTheme.typography.titleSmall)
@@ -297,9 +319,9 @@ fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
                     if (b <= 0) {
                         Text("মাসিক বাজেট ঠিক করুন, খরচ সীমার মধ্যে রাখুন", style = MaterialTheme.typography.bodySmall, color = x.muted)
                     } else {
-                        val frac = Calc.percent(totals.expense, b)
-                        Text("বাকি আছে", style = MaterialTheme.typography.labelSmall, color = x.muted)
-                        Text(f.money(b - totals.expense), style = MaterialTheme.typography.titleMedium, color = if (b - totals.expense < 0) x.expense else MaterialTheme.colorScheme.onSurface)
+                        val frac = Calc.percent(thisMonthSpent, b)
+                        Text("এই মাসে বাকি আছে", style = MaterialTheme.typography.labelSmall, color = x.muted)
+                        Text(f.money(b - thisMonthSpent), style = MaterialTheme.typography.titleMedium, color = if (b - thisMonthSpent < 0) x.expense else MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(10.dp))
                         ProgressBar(frac, budgetColor(frac, x.income, x.warn, x.expense))
                     }
@@ -332,7 +354,7 @@ fun HomeScreen(d: AppData, month: YearMonth, setMonth: (YearMonth) -> Unit, nav:
         item { SectionTitle("🕒 সাম্প্রতিক লেনদেন", action = "সব দেখুন", onAction = { nav.tab("txns") }) }
         val recent = monthTx.sortedWith(compareByDescending<com.asif.familyhisab.data.Txn> { it.day }.thenByDescending { it.createdAt }).take(6)
         if (recent.isEmpty()) item {
-            Card { EmptyState("🧾", "এই মাসে এখনো কোনো এন্ট্রি নেই", "নিচের + বাটন চাপুন, কয়েক সেকেন্ডেই প্রথম খরচ যোগ হয়ে যাবে") }
+            Card { EmptyState("🧾", "এই সময়ে কোনো এন্ট্রি নেই", "নিচের + বাটন চাপুন, কয়েক সেকেন্ডেই প্রথম খরচ যোগ হয়ে যাবে") }
         } else item {
             Card(padding = 8.dp) {
                 recent.forEach { t -> TxRow(t, d, onClick = { nav.go(Routes.add(id = t.id)) }, showDate = true) }
@@ -372,5 +394,24 @@ private fun QuickChip(title: String, sub: String, color: Long, onClick: () -> Un
     ) {
         Text(title, style = MaterialTheme.typography.labelLarge, maxLines = 1)
         Text(sub, style = MaterialTheme.typography.labelSmall, color = x.muted, maxLines = 1)
+    }
+}
+
+/** Sun / moon / auto button: tap to switch light → dark → auto. */
+@Composable
+private fun ThemeButton(s: Settings, store: Store) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val next = when (s.theme) { ThemeMode.LIGHT -> ThemeMode.DARK; ThemeMode.DARK -> ThemeMode.SYSTEM; ThemeMode.SYSTEM -> ThemeMode.LIGHT }
+    IconButton(
+        onClick = {
+            store.saveSettings(s.copy(theme = next))
+            android.widget.Toast.makeText(ctx, when (next) { ThemeMode.LIGHT -> "☀️ লাইট মোড"; ThemeMode.DARK -> "🌙 ডার্ক মোড"; ThemeMode.SYSTEM -> "📱 অটো (ফোনের মতো)" }, android.widget.Toast.LENGTH_SHORT).show()
+        },
+        modifier = Modifier.size(42.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Icon(
+            when (s.theme) { ThemeMode.LIGHT -> Icons.Rounded.LightMode; ThemeMode.DARK -> Icons.Rounded.DarkMode; ThemeMode.SYSTEM -> Icons.Rounded.BrightnessAuto },
+            "থিম বদলান", tint = MaterialTheme.colorScheme.primary,
+        )
     }
 }

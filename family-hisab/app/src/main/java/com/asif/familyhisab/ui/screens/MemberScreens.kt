@@ -51,7 +51,11 @@ import com.asif.familyhisab.ui.components.Donut
 import com.asif.familyhisab.ui.components.EmojiBadge
 import com.asif.familyhisab.ui.components.EmptyState
 import com.asif.familyhisab.ui.components.GradientBox
-import com.asif.familyhisab.ui.components.MonthSwitcher
+import com.asif.familyhisab.ui.components.PeriodPicker
+import com.asif.familyhisab.ui.components.LegendRow
+import com.asif.familyhisab.ui.components.period
+import com.asif.familyhisab.ui.components.prevLabel
+import com.asif.familyhisab.data.Period
 import com.asif.familyhisab.ui.components.ProgressBar
 import com.asif.familyhisab.ui.components.TopBar
 import com.asif.familyhisab.ui.components.TxRow
@@ -63,18 +67,19 @@ import com.asif.familyhisab.util.LocalFmt
 import java.time.YearMonth
 
 @Composable
-fun MemberScreen(d: AppData, id: String, month: YearMonth, setMonth: (YearMonth) -> Unit, nav: Nav, store: Store) {
+fun MemberScreen(d: AppData, id: String, period: Period, setPeriod: (Period) -> Unit, nav: Nav, store: Store) {
     val f = LocalFmt.current
     val x = LocalExtra.current
     val m = d.member(id) ?: return
     var editing by remember { mutableStateOf(false) }
     val mine = remember(d.txns, id) { d.txns.filter { it.memberId == id } }
-    val monthTx = remember(mine, month) { Calc.inMonth(mine, month) }
+    val monthTx = remember(mine, period) { Calc.inPeriod(mine, period) }
+    var catSel by remember(period) { mutableStateOf<Int?>(null) }
     val totals = Calc.totals(monthTx)
-    val familyTotal = remember(d.txns, month) { Calc.totals(Calc.inMonth(d.txns, month)).expense }
-    val prev = remember(mine, month) { Calc.totals(Calc.inMonth(mine, month.minusMonths(1))).expense }
+    val familyTotal = remember(d.txns, period) { Calc.totals(Calc.inPeriod(d.txns, period)).expense }
+    val prev = remember(mine, period) { period.previous()?.let { Calc.totals(Calc.inPeriod(mine, it)).expense } ?: 0L }
     val byCat = remember(monthTx) { Calc.byCategory(monthTx) }
-    val six = remember(mine, month) { Calc.lastMonths(mine, month, 6) }
+    val six = remember(mine, period) { Calc.lastMonths(mine, period.yearMonth, 6) }
     val allTime = remember(mine) { Calc.totals(mine).expense }
     val budget = d.budget.perMember[id] ?: 0
 
@@ -98,12 +103,12 @@ fun MemberScreen(d: AppData, id: String, month: YearMonth, setMonth: (YearMonth)
                         }
                     }
                     Spacer(Modifier.height(14.dp))
-                    MonthSwitcher(month, setMonth, onDark = true)
+                    PeriodPicker(period, setPeriod, onDark = true, earliest = mine.minOfOrNull { it.day }?.let { java.time.LocalDate.ofEpochDay(it) })
                     Spacer(Modifier.height(10.dp))
                     Text(if (m.isFamily) "যৌথ খরচ" else "${m.name.split(" ").first()}-এর জন্য খরচ", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge)
                     Text(f.money(totals.expense), color = Color.White, style = MaterialTheme.typography.displaySmall)
                     Calc.change(prev, totals.expense)?.takeIf { it != 0 }?.let { ch ->
-                        Text((if (ch > 0) "▲ " else "▼ ") + f.num(kotlin.math.abs(ch)) + "% গত মাসের তুলনায়", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelMedium)
+                        Text((if (ch > 0) "▲ " else "▼ ") + f.num(kotlin.math.abs(ch)) + "% " + prevLabel(period) + " তুলনায়", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelMedium)
                     }
                     Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.15f)).padding(12.dp)) {
@@ -115,7 +120,7 @@ fun MemberScreen(d: AppData, id: String, month: YearMonth, setMonth: (YearMonth)
                 }
             }
         }
-        if (budget > 0) item {
+        if (budget > 0 && period.isMonth) item {
             Card {
                 val frac = Calc.percent(totals.expense, budget)
                 Row {
@@ -143,13 +148,21 @@ fun MemberScreen(d: AppData, id: String, month: YearMonth, setMonth: (YearMonth)
             Card {
                 Text("🍩 খাতভিত্তিক", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(12.dp))
+                val sel = catSel?.takeIf { it < byCat.size }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Donut(byCat.map { it.second to (d.category(it.first)?.color ?: 0xFFB2BEC3).c() }, Modifier.size(120.dp), 16.dp)
-                    Spacer(Modifier.width(14.dp))
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        byCat.take(6).forEach { (cid, v) ->
+                    Donut(byCat.map { it.second to (d.category(it.first)?.color ?: 0xFFB2BEC3).c() }, Modifier.size(128.dp), 16.dp, selected = sel, onSelect = { catSel = it }) {
+                        if (sel != null) Text(
+                            "${f.num(Math.round(Calc.percent(byCat[sel].second, totals.expense) * 100))}%",
+                            style = MaterialTheme.typography.titleSmall, color = (d.category(byCat[sel].first)?.color ?: 0xFFB2BEC3).c(),
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        byCat.forEachIndexed { i, (cid, v) ->
                             val c = d.category(cid)
-                            Legend((c?.color ?: 0xFFB2BEC3).c(), "${c?.emoji ?: ""} ${c?.name ?: cid}", f.money(v))
+                            LegendRow((c?.color ?: 0xFFB2BEC3).c(), "${c?.emoji ?: ""} ${c?.name ?: cid}", f.money(v), sel == i, sel != null && sel != i) {
+                                catSel = if (sel == i) null else i
+                            }
                         }
                     }
                 }
@@ -162,8 +175,8 @@ fun MemberScreen(d: AppData, id: String, month: YearMonth, setMonth: (YearMonth)
                 BarChart(six.map { f.monthShort(it.first) }, six.map { it.second.expense }, Color(m.color), Modifier.fillMaxWidth().height(140.dp), highlight = 5)
             }
         }
-        item { Text("🧾 এই মাসের লেনদেন", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp)) }
-        if (monthTx.isEmpty()) item { Card { EmptyState(m.emoji, "এই মাসে কোনো এন্ট্রি নেই") } }
+        item { Text("🧾 লেনদেন — " + LocalFmt.current.period(period), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp)) }
+        if (monthTx.isEmpty()) item { Card { EmptyState(m.emoji, "এই সময়ে কোনো এন্ট্রি নেই") } }
         else item {
             Card(padding = 6.dp) {
                 monthTx.sortedWith(compareByDescending<com.asif.familyhisab.data.Txn> { it.day }.thenByDescending { it.createdAt }).forEach {

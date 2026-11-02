@@ -72,31 +72,57 @@ object Calc {
         return totals(inMonth(txns, ym)).expense / days.coerceAtLeast(1)
     }
 
-    /** Days left in the month counting today (0 if the month is over, whole month if it hasn't started). */
-    fun daysLeft(ym: YearMonth, today: LocalDate): Int = when {
-        ym == YearMonth.from(today) -> ym.lengthOfMonth() - today.dayOfMonth + 1
-        ym.isAfter(YearMonth.from(today)) -> ym.lengthOfMonth()
-        else -> 0
+    fun inPeriod(txns: List<Txn>, p: Period): List<Txn> = txns.filter { p.contains(it.day) }
+
+    /**
+     * দিনপ্রতি খরচ = total spent in the period ÷ days that have passed in it.
+     * 1st: ৳1000 → 1000/day; 2nd with no spending → 1000/2 = 500; 3rd → 333. Whole taka.
+     */
+    fun perDay(txns: List<Txn>, p: Period, today: LocalDate): Poisha {
+        val days = p.elapsedDays(today)
+        if (days <= 0) return 0
+        val v = totals(inPeriod(txns, p)).expense / days
+        return v - v % 100
+    }
+
+    /** Bars for a period: one per day for up to ~2 months, otherwise one per month. Label + expense + income. */
+    data class Bar(val label: LocalDate, val monthly: Boolean, val expense: Poisha, val income: Poisha)
+
+    fun trend(txns: List<Txn>, p: Period): List<Bar> {
+        val inP = inPeriod(txns, p)
+        return if (p.days <= 62) {
+            val byDay = inP.groupBy { it.day }
+            (0 until p.days).map { i ->
+                val d = p.from.plusDays(i.toLong())
+                val t = totals(byDay[d.toEpochDay()] ?: emptyList())
+                Bar(d, false, t.expense, t.income)
+            }
+        } else {
+            var ym = YearMonth.from(p.from)
+            val end = YearMonth.from(p.to)
+            val out = ArrayList<Bar>()
+            while (!ym.isAfter(end)) {
+                val t = totals(inP.filter { YearMonth.from(LocalDate.ofEpochDay(it.day)) == ym })
+                out += Bar(ym.atDay(1), true, t.expense, t.income)
+                ym = ym.plusMonths(1)
+            }
+            out.takeLast(24)
+        }
     }
 
     /**
-     * How much can still be spent per day and stay inside [budget]: what's left of the budget
-     * shared over the remaining days. A heavy day lowers the later days' limit, a light day raises it.
-     * Null when there's no budget or the month is over; 0 once the budget is used up.
+     * Cash that moved because of loans inside the period (not income or expense!):
+     * borrowed (+), lent (−), repaid what I owed (−), got back what I lent (+).
      */
-    fun dailyAllowance(budget: Poisha, spent: Poisha, ym: YearMonth, today: LocalDate): Poisha? {
-        val days = daysLeft(ym, today)
-        if (budget <= 0 || days <= 0) return null
-        val perDay = (budget - spent).coerceAtLeast(0) / days
-        return perDay - perDay % 100 // whole taka, rounded down so the limit is never overstated
+    fun debtFlow(debts: List<Debt>, p: Period): Poisha = debts.sumOf { d ->
+        val sign = if (d.dir == DebtDir.TOOK) 1 else -1
+        val start = if (p.contains(d.day)) sign * d.amount else 0
+        start - sign * d.payments.filter { p.contains(it.day) }.sumOf { it.amount }
     }
 
-    /** Actual expense from day 1 up to [dayOfMonth] of [ym] — "last month by this date". */
-    fun spentUntilDay(txns: List<Txn>, ym: YearMonth, dayOfMonth: Int): Poisha {
-        val from = ym.atDay(1).toEpochDay()
-        val to = ym.atDay(dayOfMonth.coerceIn(1, ym.lengthOfMonth())).toEpochDay()
-        return txns.filter { it.type == TxType.EXPENSE && it.day in from..to }.sumOf { it.amount }
-    }
+    /** Debts whose due date has passed and still aren't paid. */
+    fun overdue(debts: List<Debt>, today: LocalDate): List<Debt> =
+        debts.filter { !it.settled && it.dueDay != null && it.dueDay < today.toEpochDay() }
 
     /** Percent change from [old] to [new]; null when there's nothing to compare against. */
     fun change(old: Poisha, new: Poisha): Int? = if (old <= 0) null else (((new - old) * 100.0) / old).let { Math.round(it).toInt() }
