@@ -44,12 +44,11 @@ import com.asif.familyhisab.ui.components.period
 import com.asif.familyhisab.data.Period
 import com.asif.familyhisab.data.PKind
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.graphicsLayer
 import java.time.LocalDate
-import com.asif.familyhisab.ui.components.Pill
+import com.asif.familyhisab.ui.components.RowSpaced
+import com.asif.familyhisab.ui.components.StatTile
 import com.asif.familyhisab.ui.components.ProgressBar
 import com.asif.familyhisab.ui.components.TxRow
 import com.asif.familyhisab.ui.components.c
@@ -84,15 +83,6 @@ fun ReportsScreen(d: AppData, period: Period, setPeriod: (Period) -> Unit, nav: 
                 Text("রিপোর্ট", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
                 PeriodPicker(period, setPeriod, earliest = earliest)
             }
-            Spacer(Modifier.height(4.dp))
-            // Quick switch: দৈনিক / সাপ্তাহিক / মাসিক / বার্ষিক — keeps the date you're looking at.
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val anchor = if (period.contains(today.toEpochDay())) today else period.to
-                Pill("দৈনিক", period.kind == PKind.DAY, { setPeriod(Period.day(anchor)) }, emoji = "📅")
-                Pill("সাপ্তাহিক", period.kind == PKind.WEEK, { setPeriod(Period.week(anchor)) }, emoji = "🗓️")
-                Pill("মাসিক", period.kind == PKind.MONTH, { setPeriod(Period.month(YearMonth.from(anchor))) }, emoji = "📆")
-                Pill("বার্ষিক", period.kind == PKind.YEAR, { setPeriod(Period.year(anchor.year)) }, emoji = "🗂️")
-            }
         }
 
         // Summary
@@ -118,6 +108,15 @@ fun ReportsScreen(d: AppData, period: Period, setPeriod: (Period) -> Unit, nav: 
                         )
                     }
                 }
+            }
+        }
+
+        // আজ · এই সপ্তাহ · দিনপ্রতি
+        item {
+            RowSpaced {
+                StatTile("আজ", f.money(Calc.spentOn(d.txns, today)), "📅", x.expense, Modifier.weight(1f))
+                StatTile("এই সপ্তাহ", f.money(Calc.spentThisWeek(d.txns, today)), "🗓️", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                StatTile("দিনপ্রতি", f.money(Calc.perDay(d.txns, period, today)), "🎯", x.income, Modifier.weight(1f))
             }
         }
 

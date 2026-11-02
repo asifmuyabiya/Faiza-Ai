@@ -165,17 +165,12 @@ fun HomeScreen(d: AppData, period: Period, setPeriod: (Period) -> Unit, nav: Nav
 
         // ---------- Quick stats ----------
         item {
-            val elapsed = period.elapsedDays(today)
             val perDay = Calc.perDay(d.txns, period, today)
             RowSpaced {
                 StatTile("আজ", f.money(Calc.spentOn(d.txns, today)), "📅", x.expense, Modifier.weight(1f))
                 StatTile("এই সপ্তাহ", f.money(Calc.spentThisWeek(d.txns, today)), "🗓️", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-                StatTile("দিনপ্রতি", f.money(perDay), "⚖️", x.income, Modifier.weight(1f))
+                StatTile("দিনপ্রতি", f.money(perDay), "🎯", x.income, Modifier.weight(1f))
             }
-            if (elapsed > 1) Text(
-                "${f.period(period, today)} — ${f.num(elapsed)} দিনে মোট ${f.money(totals.expense)} খরচ, গড়ে দিনপ্রতি ${f.money(perDay)}",
-                style = MaterialTheme.typography.labelMedium, color = x.muted, modifier = Modifier.padding(start = 6.dp, top = 8.dp),
-            )
             Spacer(Modifier.height(10.dp))
         }
 
